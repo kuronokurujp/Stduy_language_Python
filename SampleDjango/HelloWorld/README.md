@@ -4,36 +4,13 @@
 windows10
 python3.10
 
-# 開発環境準備
-- 開発用ディレクトリを作成
-- ターミナルを起動して開発用ディレクトリをカレントディレクトリにする
-- 仮想環境を作る
-    - 作成コマンド
-        python -m venv venv
-- 作成した仮想環境を有効にする
-    - 有効コマンド
-        .\venv\Scripts\activate 
-    - 参考サイト
-        - https://zenn.dev/ryotoitoi/articles/0fd021ad9405bf
-- pipの確認
-    - 確認コマンド
-        pip list
-    - pipのアップグレードを要求するメッセージが出るのでアップグレードする
-    - アップグレードコマンドはメッセージの中に含まれているのでそのコマンドを利用
-    
-- djangoをインストール
-    - インストールコマンド
-        pip install django==4.0.2
-    - インストールしたdjangoのバージョン表示コマンド
-        python -m django version
-
-- Djangoのプロジェクト生成
+# Djangoのプロジェクト生成
     - プロジェクト生成するディレクトリを作成
     - 作成したディレクトリに移動
     - Djangoのプロジェクト作成コマンドでひな型のプロジェクトを作成
         - Configというプロジェクトを作成↓
             django-admin startproject Config . 
-            
+
 # Djangoのプロジェクトを仮想サーバーで起動
 - Djangoプロジェクトのmanage.pyを使って仮想サーバーでDjangoプロジェクトを起動
     - 起動コマンド
@@ -41,7 +18,7 @@ python3.10
 - 起動したDjangoプロジェクトを確認
     -   ターミナルにStarting development servr at http://xxx.xxx.xxx:8000/ というメッセージがある. <br>
         http~の部分をプラウザのURL枠に設定したページを開く
-
+ 
 # Djangoのプロジェクト内に新規アプリを作成
 - 新規アプリ作成コマンドでアプリを作成
     - Appという名前のアプリを新規に作成

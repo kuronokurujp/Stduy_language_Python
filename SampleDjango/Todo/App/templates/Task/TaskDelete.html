@@ -1,0 +1,21 @@
+<!-- 拡張してテンプレートのhtmlファイルを設定 -->
+{% extends 'Base.html' %}
+
+<!-- 拡張テンプレートのhtmlに挿入するブロック内に個別コードを記述 -->
+{% block header %}
+    <dvi class="p-3 mt-3 mb-3">
+        <h1>タスクの削除</h1>
+    </dvi>
+{% endblock header %}
+
+{% block content %}
+
+<form action="" method="POST">
+    {% csrf_token %}
+    <p>「{{ task.pk }}.{{ task.title }}」を削除しても良いでしょうか？</p>
+    <div class="d-grid gap-2 col-6 mx-left">
+        <input class="btn btn-danger" type="submit", value="削除"">
+    </div>
+</form>
+
+{% endblock content %}

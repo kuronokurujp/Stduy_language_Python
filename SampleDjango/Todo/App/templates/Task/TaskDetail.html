@@ -1,0 +1,22 @@
+<!-- 拡張してテンプレートのhtmlファイルを設定 -->
+{% extends 'Base.html' %}
+
+<!-- 拡張テンプレートのhtmlに挿入するブロック内に個別コードを記述 -->
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+    <div class="card mt-3">
+      <div class="card-body">
+        <h2>{{ task.title }}</h2>
+        <p>{{ task.description }}</p>
+        <p class="text-muted">{{ task.deadline }}</p>
+
+        {% if user.is_authenticated %}
+        <a href="{% url 'task_update' task.pk %}" class="btn btn-outline-success">編集</a>
+        <a href="{% url 'task_delete' task.pk %}" class="btn btn-outline-danger">削除</a>
+        {% endif %}
+      </div>
+    </div>
+
+{% endblock content %}

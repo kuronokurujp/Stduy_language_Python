@@ -1,0 +1,27 @@
+<!-- 拡張してテンプレートのhtmlファイルを設定 -->
+{% extends 'Base.html' %}
+
+{% block header %}
+<div class="p-3 mb-3 mt-3">
+    {% if 'Edit' in request.path %}
+        <h1>タスクの編集</h1>
+    {% elif 'New' in request.path %}
+        <h1>タスクの新規作成</h1>
+    {% endif %}
+</div>
+{% endblock header %}
+
+<!-- 拡張テンプレートのhtmlに挿入するブロック内に個別コードを記述 -->
+{% block content %}
+
+<form action="" method="POST">
+    {% csrf_token %}
+    <table class="table">
+        {{ form.as_table }}
+    </table>
+    <div class="d-grid gap-2 col-6 mx-left">
+        <input class="btn btn-success" type="submit", value="送信"">
+    </div>
+</form>
+
+{% endblock content %}
