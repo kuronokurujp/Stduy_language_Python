@@ -26,4 +26,15 @@ python3.10
         pip install django==4.0.2
     - インストールしたdjangoのバージョン表示コマンド
         python -m django version
+        
+# プロジェクト作成
+    - 以下のコマンドでプロジェクトを作成する
+        django-admin starproject XXX .
+        XXXはプロジェクト名
+#  プロジェクトの環境設定
+    - 言語を日本語 / タイムスタンプを日本に合わせる
+    - setting.pyを開いて以下の項目を変更
+        LANGUAGE_CODE = 'ja'
+        TIME_ZONE = 'Asia/Tokyo'
+
 
