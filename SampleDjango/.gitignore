@@ -161,3 +161,6 @@ cython_debug/
 
 # ローカルテストで作成したマイグレートファイルは無視
 blog/blog/migrations/*.py
+
+# Djangoのメディアディレクトリは除外
+media
