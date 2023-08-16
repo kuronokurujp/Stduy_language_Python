@@ -69,7 +69,8 @@ def test_period_history():
     cmd: labo225.Command = labo225.Command()
 
     output_dir: str = "output"
-    output_file_name: str = "test_labo225_reduction.csv"
+    # output_file_name: str = "test_labo225_1h.csv"
+    output_file_name: str = "test_labo225_m15.csv"
     test_csv_file_path = os.path.join(output_dir, output_file_name)
     if os.path.isfile(test_csv_file_path):
         os.remove(test_csv_file_path)
@@ -80,5 +81,5 @@ def test_period_history():
         input_csv_file_path_1min=os.path.join(output_dir, input_file_name),
         output_dir=output_dir,
         output_file_name=output_file_name,
-        chart_term=60,
+        chart_term=15,
     )

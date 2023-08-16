@@ -59,7 +59,7 @@ class Command(object):
             # r = range(math.ceil(len(day_df) / chart_term))
             b_loop: bool = True
 
-            print("start redaction day({})".format(day))
+            print("start parsing day({})".format(day))
             while b_loop:
                 # for i in r:
                 # print(f"\r\033[K({i}) / ({len(r)})", end="")
@@ -87,12 +87,12 @@ class Command(object):
                 # 次ループのために開始時間追加
                 start_time = start_time + datetime.timedelta(minutes=chart_term)
 
-            print("end redaction day({})".format(day))
+            print("end parsing day({})".format(day))
 
         # 結果
         result_df = pd.DataFrame(result_list)
-        result_df.columns = ["Datetime", "Open", "High", "Low", "Close", "Volume"]
-        result_df = result_df.sort_values("Datetime")
+        result_df.columns = ["datetime", "open", "high", "low", "close", "volume"]
+        result_df = result_df.sort_values("datetime")
 
         # ファイル出力
         result_df.to_csv(os.path.join(output_dir, output_file_name), index=None)
