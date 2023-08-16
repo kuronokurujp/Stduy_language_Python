@@ -1,176 +1,92 @@
-# PythonのWebフレームワークDjangoで作成したTodoプロジェクト
+# Python の Web フレームワーク Django で作成した Todo プロジェクト
+
+# 説明
+
+Todo アプリを作成時の情報を記載しています。
+Django による共通機能による説明は省いています。
 
 # 開発環境
+
 windows10
-python3.1
+python3.10.11
 
-Djangoで生成で自動生成しているディレクトリの名前は先頭名が小文字になっている
-合わせるためにはこちらが作成するディレクトリ名も先頭文字を小文字にするのがいいかも
+## Todo リストビューの作成
 
-# Djangoのプロジェクト生成
-    - プロジェクト生成するディレクトリを作成
-    - 作成したディレクトリに移動
-    - Djangoのプロジェクト作成コマンドでひな型のプロジェクトを作成
-        - Configというプロジェクトを作成↓
-            django-admin startproject Config . 
-        - 最後に.を付ける理由
-            - .をつけないとConfigディレクトリが作成する
-            - 作成したディレクトリに更にConfigディレクトリが作成されて入れ子になる
-                - ディレクトリが以下の状態になる
-                Root
-                    - Config
-                        - Config
-                        - manage.py
-            - .をつけると以下の状態になる
-                - Root
-                    -Config
-                    -manage.py
-            .をつければルートディレクトリ直下にConfigとmanage.pyが作成して入れ子状態ではなくなる
-            最後の.はConfigを作成先の指定パス
-
-
-# Djangoのプロジェクト内に新規アプリを作成
-- 新規アプリ作成コマンドでアプリを作成
-    - Appという名前のアプリを新規に作成
-       python manage.py startapp App 
-
-# 初期設定
-- 作成したアプリの登録
-    - settings.pyを開く
-    - INSTALLED_APPSにアプリ設定メソッドを追加
-        - INSTALLED_APPS = [
-            'App.apps.AppConfig'
-        ]
-- 言語を日本語にする
-    - settings.pyを開く
-    - 言語設定箇所を変える
-        - LANGUAGE_CODE = 'ja'
-- タイムゾーンを日本にする
-    - settings.pyを開く
-    - タイムソーン設定箇所を変える
-        - TIME_ZONE = 'Asia/Tokyo'
-
-# DBにデータを保存するモデルクラスの作成
-- Appディレクトリのmodels.pyを開く
-- クラスmodels.Modelを継承したクラスを宣言
-- モデルのプロパティを宣言してDBに保存するフィールドと紐づける
-    - こんな感じ
-    class Task(models.Model):
-        title = models.CharField(max_length=32)
-        description = models.TextField(blank=True)
-        deadline = models.DateField()
-        
-    - どんなフィールドクラスがあるかはドキュメントを見る
-        - [フィールドクラスのドキュメント](https://docs.djangoproject.com/en/4.2/ref/models/fields/)
-        - [Qiitaでまとめているフィールドクラス](https://qiita.com/nachashin/items/f768f0d437e0042dd4b3)
-
-- 宣言モデルをマイグレーション対象とするマイグレートクラスを作成
-    python manage.py makemigrations
-    
-- 作成したマイグレートクラスからマイグレーションする
-    python manage.py migrate
-    
-    - 実行するとマイグレートクラスの処理が実行する
-    - ターミナルに実行結果が表示されて全部OKと出ていると成功
-    
-- 管理画面用のスーパーユーザーを作成
-    以下のコマンドで管理者アカウントを作成できる
-        python manage.py createsuperuser
-
-- 仮サーバーを起動して以下のURLで管理画面で移行
-    http://127.0.0.1:8000/admin
-
-- 管理画面に移動したら作成したスーパーユーザーでログインする
-- 管理画面に作成したモデルを登録して管理画面からデータを追加できるようにする
-    - admin.pyを開く
-    - admin.site.registerメソッドでモデルを登録
-        - こんな感じ
-            from App.models import Task
-
-            admin.site.register(Task)
-
-    - 管理画面を更新して登録したモデルのデータが追加できているか確認
-
-- 管理画面のデータ一覧の項目名を変える
-    - モデル継承したクラスの__str__メソッドをオーバーライドする
-    - オーバーライドした__str__メソッドに項目名を返す
-        - こんな感じ
-            def __str__(self):
-                return self.title
-    - 管理画面を更新してデータ一覧の項目名が変わっているかどうか確認
-
-## Todoリストビューの作成
-
-- views.pyにListViewを継承したクラスを追加
+-   views.py に ListView を継承したクラスを追加
     こんなコード
-        from django.views.generic import ListView
-        from App.models import Task
+    from django.views.generic import ListView
+    from App.models import Task
 
-        class TodoListView(ListView):
-            model = Task
-            
-- urls.pyにListViewを継承したクラスを設定
-    - urls.pyのurlpatterns配列に直接Viewを設定する方法は使わず、コメントに記載"Including another URLconf"の方法を採用する
-        - urlをアプリ毎に別途管理したいから
-    - アプリのディレクトリにurls.pyを追加
-    - 追加したurls.pyにListViewを継承したクラスを登録
+          class TodoListView(ListView):
+              model = Task
+
+-   urls.py に ListView を継承したクラスを設定
+
+    -   urls.py の urlpatterns 配列に直接 View を設定する方法は使わず、コメントに記載"Including another URLconf"の方法を採用する
+        -   url をアプリ毎に別途管理したいから
+    -   アプリのディレクトリに urls.py を追加
+    -   追加した urls.py に ListView を継承したクラスを登録
         コードはこんな感じ
         from django.urls import path
         from App.views import TodoListView
 
         urlpatterns = [
-            path('', TodoListView.as_view(), name='task_list'),
+        path('', TodoListView.as_view(), name='task_list'),
         ]
-        
-- view用のhtmlファイルを追加
-    - アプリディレクトリの下にtemplatesディレクトリを追加
-    - 追加したtemplatesディレクトリにTaskディレクトリを追加
-    - TaskディレクトリにTaskList.htmlを追加
 
-- 追加したTaskList.htmlとviewを紐づけ
-    - views.pyを開く
-    - ListViewを継承したクラスのtemplate_nameプロパティにTaskList.htmlのパスを設定
+-   view 用の html ファイルを追加
+
+    -   アプリディレクトリの下に templates ディレクトリを追加
+    -   追加した templates ディレクトリに Task ディレクトリを追加
+    -   Task ディレクトリに TaskList.html を追加
+
+-   追加した TaskList.html と view を紐づけ
+    -   views.py を開く
+    -   ListView を継承したクラスの template_name プロパティに TaskList.html のパスを設定
         こんな感じ
-        class TodoListView(ListView):
-            # templatesディレクトリのTaskディレクトリ内にあるTaskList.htmlをテンプレートとする
-            template_name = 'Task/TaskList.html'
+        class TodoListView(ListView): # templates ディレクトリの Task ディレクトリ内にある TaskList.html をテンプレートとする
+        template_name = 'Task/TaskList.html'
 
-# Taskの詳細ビューを追加
+# Task の詳細ビューを追加
 
-- 詳細ビューのクラスを作る
-    - views.pyを開く
-    - DetailViewクラスを継承したクラスを宣言 
+-   詳細ビューのクラスを作る
+
+    -   views.py を開く
+    -   DetailView クラスを継承したクラスを宣言
         コード
-            from django.views.generic import ListView, DetailView
-            from App.models import Task
+        from django.views.generic import ListView, DetailView
+        from App.models import Task
 
-            # Todo詳細ビュー
-            class TodoDetailView(DetailView):
-                model = Task
-                template_name = 'Task/TaskDetail.html'
-                
-    - 詳細ビューを遷移できるように登録
-        - urls.pyを開く
-        - urlpatterns配列に登録
+              # Todo詳細ビュー
+              class TodoDetailView(DetailView):
+                  model = Task
+                  template_name = 'Task/TaskDetail.html'
+
+    -   詳細ビューを遷移できるように登録
+
+        -   urls.py を開く
+        -   urlpatterns 配列に登録
             コード
-                from App.views import TodoListView, TodoDetailView
+            from App.views import TodoListView, TodoDetailView
 
-                urlpatterns = [
-                    # タスク情報のid値をurlに含める
-                    path('Task/<int:pk>', TodoDetailView.as_view(), name='task_detail'),
-                ]
-                
-            - urlにTaskのIdを設定させてページ移動するとTaskリストにあるidのデータを使ったページが開く
-    - 詳細ビューのhtmlファイルを新規追加
-        - templatesディレクトリに詳細ビュー用のhtmlファイルを追加
-            -  名前はTaskDetail.htmlにしている
-    - TaskDetail.htmlにTaskクラスのプロパティを表示するようにコード追加
+                  urlpatterns = [
+                      # タスク情報のid値をurlに含める
+                      path('Task/<int:pk>', TodoDetailView.as_view(), name='task_detail'),
+                  ]
+
+            -   url に Task の Id を設定させてページ移動すると Task リストにある id のデータを使ったページが開く
+
+    -   詳細ビューの html ファイルを新規追加
+        -   templates ディレクトリに詳細ビュー用の html ファイルを追加
+            -   名前は TaskDetail.html にしている
+    -   TaskDetail.html に Task クラスのプロパティを表示するようにコード追加
         コード
-            <h2>{{ task.title }}</h2>
-            <p>{{ task.description }}</p>
-            <p>{{ task.deadline }}</p>
+        <h2>{{ task.title }}</h2>
+        <p>{{ task.description }}</p>
+        <p>{{ task.deadline }}</p>
 
-# Todoの新規データ作成
+# Todo の新規データ作成
+
     - データ入力ビューの追加
         - views.pyを開く
         - CreateViewクラスを継承した入力ビューのクラスを作成
@@ -184,7 +100,7 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
                     fields = '__all__'
                     template_name = 'Task/TaskForm.html'
                     success_url = reverse_lazy('task_list')
-                    
+
             - プロパティのfieldsがフォーム入力のフィールド
                 - '__all__'とするとモデルの全てのフィールドが入力対象となる
             - プロパティのsuccess_urlにはデータ送信が成功した時に遷移するビュー先を指定
@@ -198,7 +114,7 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
             urlpatterns = [
                 path('Task/New', TodoCreateView.as_view(), name='task_new'),
             ]
-            
+
     - 入力ビュー用のhtmlファイルを新規追加
         - templatesディレクトリに入力ビュー用のhtmlファイルを追加
         - 追加したhtmlに入力フォームのコードを追加
@@ -210,13 +126,14 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
                 </table>
                 <input type="submit", value="送信"">
             </form>
-            
+
             - 入力tableの前に必ず{% csrf_token %}を追加
                 - これはwebページのセキュリティ対策
                 - クロスサイトスクリプティング対策
                     - [クロスサイトスクリプティングとは](https://www.mobi-connect.net/blog/what-is-xss/)
 
-## Todoの削除
+## Todo の削除
+
     - データ削除ビューの追加
         - views.pyを開く
         - DeleteViewを継承した削除用ビュークラスを宣言
@@ -251,7 +168,8 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
                 <input type="submit", value="削除"">
             </form>
 
-## Todoの更新
+## Todo の更新
+
     - データ更新ビューの追加
         - views.pyを開く
         - UpdateViewを継承した更新用ビュークラスを宣言
@@ -276,16 +194,17 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
                 urlpatterns = [
                     path('Task/<int:pk>/Edit', TodoUpdateView.as_view(), name='task_update'),
                 ]
-                
+
 ## プラウザページの見栄えを良くする
+
     - BootStrapを使う
         - 以下のサイトを参照
-           https://getbootstrap.jp/docs/5.0/getting-started/introduction/ 
-           
+           https://getbootstrap.jp/docs/5.0/getting-started/introduction/
+
         - スターターテンプレートをコピー
         - TaskList.htmlにコピー
         - bodyタグ内に今まで記述したTaskList.htmlの内容を移動
-        
+
     - 各テンプレートの共通コードを記述した拡張テンプレートを作成
         - templete/TaskのディレクトリにBase.htmlを作成
         - Base.htmlにBooststartpのスターターテンプレートをコピー
@@ -320,6 +239,7 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
         - 各ページの見た目を整える
 
 # アカウントアプリの追加
+
     - 以下のコマンドでアカウントアプリを作成
         python manage.py startapp Accounts
 
@@ -339,6 +259,7 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
             LOGOUT_REDIRECT_URL = 'task_list'
 
 ## アカウントアプリにログインのビューを追加
+
     - views.pyにログイン用のViewクラスを作成
         コード
         from django.contrib.auth.views import LoginView
@@ -346,8 +267,9 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
         class MyLoginView(LoginView):
             template_name = 'Accounts/Login.html'
             redirect_authenticated_user = True
-            
-## アカウントアプリのurlにログインとログアウトのビューを追加
+
+## アカウントアプリの url にログインとログアウトのビューを追加
+
     - urls.pyにログインとログアウトのビューを追加
         - ログアウトのビューはdjangoで用意しているのを利用する
             コード
@@ -360,6 +282,7 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
                 ]
 
 ## ページにログインとログアウトの項目を追加
+
     - Base.htmlにログインとログアウトの項目を追加
         コード
             {% if user.is_authenticated %}
@@ -371,16 +294,18 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
               <a class="nav-link" href="{% url 'login' %}">ログイン</a>
             </li>
             {% endif %}
-            
+
         {% if user.is_autheticated %}
         この行でログインしている時としていない時の分岐ができる
-        
+
 ## 各ページでログインしている時とログインしていない時で挙動を変える
+
     - ログアウトしている時はタスクの編集や削除ボタンなどを非表示にさせる
         {% if user.is_autheticated %}
         この行でログインかログアウトかを判断して表示内容を変える
-        
+
 ## 会員登録を作る
+
     - 会員登録のビューをアカウントアプリに作成
         コード
             from django.views.generic import CreateView
@@ -395,7 +320,7 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
     - 会員登録用のhtmlファイルを作成
         - Accounts/Singup.htmlを作成する
         - htmlの中身はAccounts/Login.htmlの内容をコピーで良い
-        
+
     - アカウントアプリのurls.pyに会員登録のviewを設定
         コード
             from django.urls import path
@@ -404,11 +329,11 @@ Djangoで生成で自動生成しているディレクトリの名前は先頭�
             urlpatterns = [
                 path('signup/', SignupView.as_view(), name='signup'),
             ]
-            
+
     - Base.htmlに会員登録のボタンを追加
         コード
             <li class="nav-item">
               <a class="nav-link" href="{% url 'signup' %}">会員登録</a>
             </li>
-            
+
             このコードはログアウト状態の時のみ表示
