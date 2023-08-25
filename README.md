@@ -221,6 +221,42 @@ Sample Python List
         - 以下のコマンドでrequirements.txtに記載したパッケージ一覧をインポートできる
             pip install -r requirements.txt
 
+## ローカライズ対応
+- 以下のサイトをまず参考にした
+    - https://blog.narito.ninja/detail/86/
+    - 項目[翻訳ファイルの作成]の前まではそのまま使えた
+        - django-admin makemessages -l ja
+        - 上記のコマンドを実行したら以下のエラーが出た
+            - Django makemessages command generates error: "xgettext: Non-ASCII string"
+        - これのサイト以外のを参考にした
+- 次はこのサイトが参考になった
+    - https://sinyblog.com/django/translation-001/
+    - 項目[メッセージファイルの作成]の以下のコマンドでメッセージを作成してみた
+        - python manage.py makemessages -l ja
+        - しかしエラーになった
+            - ImportError: cannot import name ‘ugettext_lazy’ from ‘django.utils.translation’
+        - インポートがないというエラーで調査した
+            - 以下のサイトで解決した
+                - https://forum.djangoproject.com/t/importerror-cannot-import-name-ugettext-lazy-from-django-utils-translation/10943
+            - 参考にしたサイトはdjango3系のようだ
+                - 試した環境がdjango4系だと3系のインポートファイルがなくなったみたい
+            - 利用できるインポートに変えてうまくいった
+        - もう一度以下のコマンドを実行
+            - python manage.py makemessages -l ja
+        - しかしエラーになった
+             - Django makemessages command generates error: "xgettext: Non-ASCII string"
+            - 最初に参考にしたサイトで試したエラーが起きた
+        - 調査したら以下のサイトを参考にして解決出来た
+            - https://stackoverflow.com/questions/45078011/django-makemessages-command-generates-error-xgettext-non-ascii-string
+            - venvの仮想環境での実行が原因のようだ
+            - 以下のコマンドで成功した
+                - python manage.py makemessages -l ja -i venv
+    - 使える状態になった
+- ローカライズテキストの追加やコンパイルなど残り対応について
+    - 以下のサイトの翻訳設定や言語コンパイルの項目で対応できる
+        - https://sinyblog.com/django/translation-001/
+        
+   
 ## 実行で参考にしたサイト
 
 -   [コマンドツールのエラーコード出力方法](https://yaromai.jp/python-exit/)
