@@ -32,15 +32,15 @@ class Command(object):
     # 作成した1分足のcsvファイルデータを分足などにリダクションしたcsvファイル作成
     def make_period_history(
         self,
-        input_csv_file_path_1min: str,
-        output_dir: str,
-        output_file_name: str,
-        chart_term: int,
+        i_csv_fname_1min: str,
+        o_dir: str,
+        o_fname: str,
+        minutes: int,
     ):
         # datetimeの列は型をdatetimeに変える
         # https://www.self-study-blog.com/dokugaku/python-pandas-csv-datetime-parse/
         origin_df = pd.read_csv(
-            input_csv_file_path_1min, encoding="utf-8", parse_dates=["day", "datetime"]
+            i_csv_fname_1min, encoding="utf-8", parse_dates=["day", "datetime"]
         )
 
         # 日付のリスト
@@ -64,7 +64,7 @@ class Command(object):
                 # for i in r:
                 # print(f"\r\033[K({i}) / ({len(r)})", end="")
 
-                end_time = start_time + datetime.timedelta(minutes=chart_term - 1)
+                end_time = start_time + datetime.timedelta(minutes=minutes - 1)
                 term_df = day_df[
                     (day_df["datetime"] >= start_time)
                     & (day_df["datetime"] <= end_time)
@@ -85,7 +85,7 @@ class Command(object):
                 result_list.append([start_time, open, high, low, close, volume])
 
                 # 次ループのために開始時間追加
-                start_time = start_time + datetime.timedelta(minutes=chart_term)
+                start_time = start_time + datetime.timedelta(minutes=minutes)
 
             print("end parsing day({})".format(day))
 
@@ -95,21 +95,19 @@ class Command(object):
         result_df = result_df.sort_values("datetime")
 
         # ファイル出力
-        result_df.to_csv(os.path.join(output_dir, output_file_name), index=None)
+        result_df.to_csv(os.path.join(o_dir, o_fname), index=None)
 
     # 注意: エクセルファイル名が西暦.xlsxになっている。& シートのデータはすでにソートしてる前提
     # 一分足専用でシート名は1minとしないといけない
-    def make_all_1min_history(
-        self, file_name: str, input_dir: str, output_dir: str
-    ) -> None:
+    def make_all_1min_history(self, fname: str, i_dir: str, o_dir: str) -> None:
         period_name: str = "1min"
 
-        print(input_dir, output_dir, period_name)
+        print(i_dir, o_dir, period_name)
 
         # csvファイルで出力
-        self._create_csv_file(os.path.join(output_dir, file_name))
+        self._create_csv_file(os.path.join(o_dir, fname))
         # input_dirからエクセルファイルを抜き出す
-        file_paths: list = self._get_data_files(input_dtr=input_dir)
+        file_paths: list = self._get_data_files(input_dtr=i_dir)
 
         for file_path in file_paths:
             # エクセルファイルのシートからperoid_nameの名前に該当するシートを抜き出す
@@ -244,7 +242,11 @@ class Command(object):
 
 
 def main():
-    Fire(Command)
+    try:
+        Fire(Command)
+    except KeyboardInterrupt as keyex:
+        # キー割込みでの例外は強制終了なのでエラーとは扱わない
+        print(keyex)
 
 
 if __name__ == "__main__":

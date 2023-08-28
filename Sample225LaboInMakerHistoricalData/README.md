@@ -37,3 +37,16 @@
     -   xlsx ファイルのロード時間短取得のために実行するのをおすすめします。
 
 ## 利用方法
+用意したコマンドを実行する
+
+### make_all_1min_history
+#### 225miniでダウンロードしたエクセルファイルを納めてディレクトリを指定して1分足の過去データをcsvファイルで出力するコマンド
+#### コマンド実行例
+1. inputディレクトリにまとめているxlsxファイルから1min.csvという1分足の過去データファイルをoutputディレクトリに出力
+    - python labo225.py make_all_1min_history --fname=1min.csv --i_dir=./input --o_dir=./output
+
+### make_period_history
+#### コマンド「make_all_1min_history」で生成した過去データファイルから他の時間足の過去データファイルを出力するコマンド
+#### コマンド実行例
+1. 1min.csvから1時間足の過去データtest_1h.csvファイルをoutputディレクトリに出力
+    - python labo225.py make_period_history --i_csv_fname_1min=1min.csv --o_dir=./output --o_fname=test_1h.csv --minutes=60

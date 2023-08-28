@@ -78,8 +78,8 @@ def test_period_history():
     input_file_name: str = "test_labo225.csv"
 
     cmd.make_period_history(
-        input_csv_file_path_1min=os.path.join(output_dir, input_file_name),
-        output_dir=output_dir,
-        output_file_name=output_file_name,
-        chart_term=15,
+        i_csv_fname_1min=os.path.join(output_dir, input_file_name),
+        o_dir=output_dir,
+        o_fname=output_file_name,
+        minutes=15,
     )
