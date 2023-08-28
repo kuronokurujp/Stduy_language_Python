@@ -25,40 +25,52 @@ Sample Python List
 
 ## venv などの仮想環境を動かすための準備
 
-    -   win 版
+-   win 版
 
-        -   仮想環境を動かすため PowerShell の ps ファイルを実行するものがある
-        -   しかし PowerShell の環境によっては ps ファイルを実行不可能な設定なのもある
+    -   仮想環境を動かすため PowerShell の ps ファイルを実行するものがある
+    -   しかし PowerShell の環境によっては ps ファイルを実行不可能な設定なのもある
 
-            -   .\venv\Scripts\activete を実行すると以下のエラーが出た
-                ..\venv\Scripts\Activate.ps1 を読み込むことができません。
-            -   原因 1: PowerShell の安全装置の一つであるスクリプト不許可の設定がされている
+        -   .\venv\Scripts\activete を実行すると以下のエラーが出た
+            ..\venv\Scripts\Activate.ps1 を読み込むことができません。
+        -   原因 1: PowerShell の安全装置の一つであるスクリプト不許可の設定がされている
 
-                -   どういう事か
-                    -   PowerShell の安全装置の一つであるスクリプト不許可の設定がされている
-                -   原因なのかどうかの確認方法
+            -   どういう事か
+                -   PowerShell の安全装置の一つであるスクリプト不許可の設定がされている
+            -   原因なのかどうかの確認方法
 
-                    1. PowerShell を実行
-                    1. Get-ExecutionPolicy コマンドを実行
-                    1. Restricted が表示されたら原因１に該当
+                1. PowerShell を実行
+                1. Get-ExecutionPolicy コマンドを実行
+                1. Restricted が表示されたら原因１に該当
 
-                -   原因対策
+            -   原因対策
 
-                    1. PowerShell を管理者として実行
-                    1. 以下のコマンドを実行して Y を入力
-                       set-executionpolicy remotesigned
+                1. PowerShell を管理者として実行
+                1. 以下のコマンドを実行して Y を入力
+                   set-executionpolicy remotesigned
 
-                    1. Get-ExecutionPolicy コマンドを実行
-                    1. RemoteSigned が表示されたら OK
+                1. Get-ExecutionPolicy コマンドを実行
+                1. RemoteSigned が表示されたら OK
 
-                -   参考サイト
-                    -   [「このシステムではスクリプトの実行が無効になっているため、ファイル XXX を読み込みことができません」エラー（PowerShell）が出る原因と対処方法](https://rainbow-engine.com/ps-script-execution-disabled/)
+            -   参考サイト
+                -   [「このシステムではスクリプトの実行が無効になっているため、ファイル XXX を読み込みことができません」エラー（PowerShell）が出る原因と対処方法](https://rainbow-engine.com/ps-script-execution-disabled/)
 
 ## 仮想環境作成
 
-    -   win 版
-        -   以下のコマンドで作成
-            -   python -m venv venv
+-   win 版
+    -   以下のコマンドで作成
+        -   python -m venv venv
+
+## 仮想環境有効
+
+-   win 版
+    -   仮想環境を作成したディレクトリに移動して以下のコマンドを実行
+        -   .\venv\Scripts\activate
+
+## 仮想環境無効
+
+-   win 版
+    -   以下のコマンド実行
+        -   deactivate
 
 ## デバッグツールの環境作成
 
@@ -173,7 +185,7 @@ Sample Python List
 
 ## コード補間の環境作成
 
-    -   [これを見てやってくれ！](https://qiita.com/Sunrise98/items/af866502b06165c3ae40)
+-   [これを見てやってくれ！](https://qiita.com/Sunrise98/items/af866502b06165c3ae40)
 
 ## 単体テストの環境構築
 
@@ -181,7 +193,7 @@ Sample Python List
     - pip でインストール
         - pip install pytest
 1. tests ディレクトリを作成
-    1. 作成したディレクトリに__init__.py を作成
+    1. 作成したディレクトリに**init**.py を作成
         - これを作成しないと自作パッケージのインポートでうまくいかずテストが実行できない
 1. py ファイルを作成
     - test_xxx の関数を作成する
@@ -213,50 +225,50 @@ Sample Python List
 
 ### pip でインストールしたパッケージ一覧をエクスポートとインポート方法
 
-    - エクスポート方法
-        - 以下のコマンドでインストールしたパッケージ一覧を記載したファイルをエクスポートできる
-            pip freeze > requirements.txt
-        
-    - インポート方法
-        - 以下のコマンドでrequirements.txtに記載したパッケージ一覧をインポートできる
-            pip install -r requirements.txt
+- エクスポート方法
+    - 以下のコマンドでインストールしたパッケージ一覧を記載したファイルをエクスポートできる
+        pip freeze > requirements.txt
+
+- インポート方法
+    - 以下のコマンドでrequirements.txtに記載したパッケージ一覧をインポートできる
+        pip install -r requirements.txt
 
 ## ローカライズ対応
-- 以下のサイトをまず参考にした
-    - https://blog.narito.ninja/detail/86/
-    - 項目[翻訳ファイルの作成]の前まではそのまま使えた
-        - django-admin makemessages -l ja
-        - 上記のコマンドを実行したら以下のエラーが出た
-            - Django makemessages command generates error: "xgettext: Non-ASCII string"
-        - これのサイト以外のを参考にした
-- 次はこのサイトが参考になった
-    - https://sinyblog.com/django/translation-001/
-    - 項目[メッセージファイルの作成]の以下のコマンドでメッセージを作成してみた
-        - python manage.py makemessages -l ja
-        - しかしエラーになった
-            - ImportError: cannot import name ‘ugettext_lazy’ from ‘django.utils.translation’
-        - インポートがないというエラーで調査した
-            - 以下のサイトで解決した
-                - https://forum.djangoproject.com/t/importerror-cannot-import-name-ugettext-lazy-from-django-utils-translation/10943
-            - 参考にしたサイトはdjango3系のようだ
-                - 試した環境がdjango4系だと3系のインポートファイルがなくなったみたい
-            - 利用できるインポートに変えてうまくいった
-        - もう一度以下のコマンドを実行
-            - python manage.py makemessages -l ja
-        - しかしエラーになった
-             - Django makemessages command generates error: "xgettext: Non-ASCII string"
-            - 最初に参考にしたサイトで試したエラーが起きた
-        - 調査したら以下のサイトを参考にして解決出来た
-            - https://stackoverflow.com/questions/45078011/django-makemessages-command-generates-error-xgettext-non-ascii-string
-            - venvの仮想環境での実行が原因のようだ
-            - 以下のコマンドで成功した
-                - python manage.py makemessages -l ja -i venv
-    - 使える状態になった
-- ローカライズテキストの追加やコンパイルなど残り対応について
-    - 以下のサイトの翻訳設定や言語コンパイルの項目で対応できる
-        - https://sinyblog.com/django/translation-001/
-        
-   
+
+-   以下のサイトをまず参考にした
+    -   https://blog.narito.ninja/detail/86/
+    -   項目[翻訳ファイルの作成]の前まではそのまま使えた
+        -   django-admin makemessages -l ja
+        -   上記のコマンドを実行したら以下のエラーが出た
+            -   Django makemessages command generates error: "xgettext: Non-ASCII string"
+        -   これのサイト以外のを参考にした
+-   次はこのサイトが参考になった
+    -   https://sinyblog.com/django/translation-001/
+    -   項目[メッセージファイルの作成]の以下のコマンドでメッセージを作成してみた
+        -   python manage.py makemessages -l ja
+        -   しかしエラーになった
+            -   ImportError: cannot import name ‘ugettext_lazy’ from ‘django.utils.translation’
+        -   インポートがないというエラーで調査した
+            -   以下のサイトで解決した
+                -   https://forum.djangoproject.com/t/importerror-cannot-import-name-ugettext-lazy-from-django-utils-translation/10943
+            -   参考にしたサイトは django3 系のようだ
+                -   試した環境が django4 系だと 3 系のインポートファイルがなくなったみたい
+            -   利用できるインポートに変えてうまくいった
+        -   もう一度以下のコマンドを実行
+            -   python manage.py makemessages -l ja
+        -   しかしエラーになった
+            -   Django makemessages command generates error: "xgettext: Non-ASCII string"
+            -   最初に参考にしたサイトで試したエラーが起きた
+        -   調査したら以下のサイトを参考にして解決出来た
+            -   https://stackoverflow.com/questions/45078011/django-makemessages-command-generates-error-xgettext-non-ascii-string
+            -   venv の仮想環境での実行が原因のようだ
+            -   以下のコマンドで成功した
+                -   python manage.py makemessages -l ja -i venv
+    -   使える状態になった
+-   ローカライズテキストの追加やコンパイルなど残り対応について
+    -   以下のサイトの翻訳設定や言語コンパイルの項目で対応できる
+        -   https://sinyblog.com/django/translation-001/
+
 ## 実行で参考にしたサイト
 
 -   [コマンドツールのエラーコード出力方法](https://yaromai.jp/python-exit/)
@@ -267,4 +279,3 @@ Sample Python List
     -   %%と二重にすると良い
 -   [config.ini にリストや辞書の要素を対応する方法](https://stackoverflow.com/questions/335695/lists-in-configparser)
 -   [クラスの変数の検証が出来るパッケージについて](https://dev.classmethod.jp/articles/python_class_instance_validation/)
--   拡張について
