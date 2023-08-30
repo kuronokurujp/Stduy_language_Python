@@ -170,7 +170,7 @@ Sample Python List
 -   win 版
 
     -   以下のコマンドで black をインストール
-        pip instlal black
+        pip install black
     -   VSCode で Black を使うように設定
 
         -   グローバル設定ファイル settgins.json に以下の記述を追加
