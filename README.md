@@ -204,6 +204,8 @@ Sample Python List
 1. settings.js に tests ディレクトリのパスを指定
    こんな感じ(cli_simple ディレクトリ中にあるテストコードが入っている tests ディレクトリを指定)
    "${workspaceFolder}/cli_simple/tests",
+1. test_xxx.pyというテスト用のpyファイルを作成
+    - __test.pyというファイルではテストフレームワークで認識しないので注意__
 
 -   参考サイト
     -   [pytest でのインストールについて分かった](https://rurukblog.com/post/vscode-pytest/)
@@ -269,6 +271,29 @@ Sample Python List
     -   以下のサイトの翻訳設定や言語コンパイルの項目で対応できる
         -   https://sinyblog.com/django/translation-001/
 
+## 開発メモ
+
+- クラスの__dict__にはクラス変数定義の要素が入っているが、__init__内でクラス変数定義しないと要素が入らない
+    - __dict__が要素に入らないケース
+    
+            class Test(object):
+                value: int = 0
+
+            test: Test = Test()
+            # __dict__を出力しても空になっている
+            print(test.__dict__)
+
+     - __dict__に要素が入るケース
+    
+            class Test(object):
+                def __init__(self):
+                    self.value = 0
+
+            test: Test = Test()
+            # __dict__を出力するとvalue要素がある
+            print(test.__dict__)
+
+   
 ## 実行で参考にしたサイト
 
 -   [コマンドツールのエラーコード出力方法](https://yaromai.jp/python-exit/)
