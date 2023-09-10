@@ -59,7 +59,7 @@ def test_model_group():
 
 
 def test_model_group_avg():
-    path: str = "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1\AUDJPY_Rpoert_D1.htm"
+    path: str = "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1\AUDJPY.htm"
     soup = mt4.load_mt4_html(path)
     assert not soup is None
 
@@ -68,7 +68,7 @@ def test_model_group_avg():
     assert not model_list is None
     assert 0 < len(model_list)
 
-    path: str = "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1\AUDUSD_Rpoert_D1.htm"
+    path: str = "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1\AUDUSD.htm"
     soup = mt4.load_mt4_html(path)
     assert not soup is None
 
@@ -82,15 +82,15 @@ def test_model_group_avg():
 
     print()
     for key, value in group_model_dict.items():
-        model: mt4.DataModel = mt4.get_avg_data_model(value)
-        print("{}:{}".format(key, model.prfoit_lost))
-        print("{}:{}".format(key, model.drawdown_d))
-        print("{}:{}".format(key, model.drawdown_p))
+        model: mt4.GroupDataModel = mt4.get_avg_data_model(value)
+        print("{}:{}".format(key, model.get_avg_val(type_name="prfoit_lost")))
+        print("{}:{}".format(key, model.get_avg_val(type_name="drawdown_d")))
+        print("{}:{}".format(key, model.get_avg_val(type_name="drawdown_p")))
 
 def test_output_xlsx():
     avg_model_list: list = mt4.create_param_fit_model_list([
-        "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1\AUDJPY_Rpoert_D1.htm",
-        "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1\AUDUSD_Rpoert_D1.htm"
+        "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1\AUDJPY.htm",
+        "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1\AUDUSD.htm"
     ])
 
     # 出力
