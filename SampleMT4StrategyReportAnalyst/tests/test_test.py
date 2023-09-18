@@ -115,9 +115,13 @@ def test_file_filter():
 def test_output_final_data():
 
     path_data_list: list = [
-        ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1", "D1"],
-        ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\H4", "H4"],
-        ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\H1", "H1"],
+
+        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1", "D1"],
+        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\H4", "H4"],
+        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\H1", "H1"],
+        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\H1", "H1"],
+        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data/20230915/M15", "M15"],
+        ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data/20230917", "M30"],
     ]
 
     for path_data in path_data_list:

@@ -47,14 +47,14 @@ def test_mege_csv_file():
 
     cmd._create_csv_file(test_csv_file_path)
 
-    wb, target_sheet_names = cmd._open_xls("input/2006.xlsx")
-    cmd._add_csv_data(wb, target_sheet_names)
+    # wb, target_sheet_names = cmd._open_xls("input/2006.xlsx")
+    # cmd._add_csv_data(wb, target_sheet_names)
 
     wb, target_sheet_names = cmd._open_xls("input/2007.xlsx")
     cmd._add_csv_data(wb, target_sheet_names)
 
-    wb, target_sheet_names = cmd._open_xls("input/2008.xlsx")
-    cmd._add_csv_data(wb, target_sheet_names)
+    # wb, target_sheet_names = cmd._open_xls("input/2008.xlsx")
+    # cmd._add_csv_data(wb, target_sheet_names)
 
 
 # xlsxファイルパス取得

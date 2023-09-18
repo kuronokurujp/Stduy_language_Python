@@ -52,6 +52,8 @@ class Command(object):
 
         # 日付の繰り返し
         for day in origin_day:
+            print(f"\r\033[K({day})", end="")
+
             day_df = origin_df[origin_df["day"] == day]
             # 先頭の日付を開始時間にしている
             start_time = day_df.at[day_df.index[0], "datetime"]
@@ -59,7 +61,7 @@ class Command(object):
             # r = range(math.ceil(len(day_df) / chart_term))
             b_loop: bool = True
 
-            print("start parsing day({})".format(day))
+            # print("start parsing day({})".format(day))
             while b_loop:
                 # for i in r:
                 # print(f"\r\033[K({i}) / ({len(r)})", end="")
@@ -87,7 +89,7 @@ class Command(object):
                 # 次ループのために開始時間追加
                 start_time = start_time + datetime.timedelta(minutes=minutes)
 
-            print("end parsing day({})".format(day))
+            # print("end parsing day({})".format(day))
 
         # 結果
         result_df = pd.DataFrame(result_list)
@@ -146,18 +148,25 @@ class Command(object):
 
             sheet = wb[sheet_name]
 
-            last_row = sheet.max_row + 1
+            last_row = len(sheet['A']) 
+            # セルの末尾から逆ループして空白じゃないセルを見つける
+            # 空白じゃないセルを見つけたら、そこが最大行数
+            for i in reversed(range(1, last_row + 1)):
+                #セルがNoneではなければ
+                if sheet.cell(row=i, column=1).value != None:
+                    last_row = (int)(i)
+                    break
+
             first_row = 1
             # データ開始行がデータによってバラバラなので探す
-            for i in range(first_row, last_row):
+            for i in range(first_row, last_row + 1):
                 if sheet.cell(i, 1).value == "日付":
                     first_row = i + 1
                     break
 
-            #
-            print("sheet_name({}) / max_row({})".format(sheet_name, last_row))
+            print("sheet_name({}): first_row({}) / max_row({})".format(sheet_name, first_row, last_row))
             # https://www.delftstack.com/ja/howto/python/python-for-loop-start-at-1/
-            for i in range(first_row, last_row):
+            for i in range(first_row, last_row + 1):
                 if not sheet.cell(i, 1).value:
                     break
 
@@ -223,6 +232,7 @@ class Command(object):
                 self.csv_file.write(",".join(row) + "\n")
 
                 time.sleep(0.01)
+            print("")
 
     def _open_xls(self, xls_file_path: str, peroid_name: str = "1min"):
         print(xls_file_path)
