@@ -52,12 +52,45 @@ class DataModel(BaseDataModel):
         self.curreny_name = curreny_name
 
 
-class GroupDataModel(object):
+# 各通貨のスコア
+class CurrencyScoreModel(object):
+    pass
+
+class ParamPairModel(object):
     def __init__(self, model_list: list) -> None:
         # パス
         self.no: float = model_list[0].no
         self.params: str = model_list[0].params
         self.model_list: list[DataModel] = model_list
+
+        self.params_dict: dict[str, list] = dict()
+        params_list: list = self.params.split(";")
+        for p in params_list:
+            items = p.split("=")
+            if len(items) == 2:
+                try:
+                    name: str = items[0]
+                    name = name.lstrip()
+                    name = name.rstrip()
+                    f: float = float(items[1])
+                    self.params_dict[name] = f
+                except Exception as ex:
+                    print(
+                        "error change float or int {} = {} type={}",
+                        items[0],
+                        items[1],
+                        type(items[1]),
+                    )
+                    raise ex
+
+    # TODO: 各通貨での成績表を取得
+    def get_currency_score_dict(self) -> dict[str, CurrencyScoreModel]:
+        score_dict: dict[str, CurrencyScoreModel] = dict()
+
+        return score_dict
+
+    def get_currency_count(self) -> int:
+        return len(self.model_list)
 
     def get_comment(self, type_name: str) -> str:
         comment: str = ""
@@ -66,6 +99,18 @@ class GroupDataModel(object):
                 model.curreny_name, getattr(model, type_name)
             )
             comment = comment + "\n"
+        return comment
+
+    def get_comment_by_param(self) -> str:
+        return ""
+        comment: str = ""
+        for k, v in self.params_dict.items():
+            add_comment: str = "{}={}".format(k, v)
+            if comment == "":
+                comment = add_comment
+            else:
+                comment = "{}\n{}".format(comment, add_comment)
+
         return comment
 
     def get_avg_val(self, type_name: str) -> float:
@@ -94,11 +139,6 @@ class GroupDataModel(object):
         return 0.0
 
 
-def get_avg_data_model(model_list: list) -> GroupDataModel:
-    model: GroupDataModel = GroupDataModel(model_list=model_list)
-    return model
-
-
 def load_mt4_html(filename_fullpath: str) -> bs4.BeautifulStoneSoup:
     file_path = Path(filename_fullpath)
     # win版のMT4で作成したhtmlファイルの文字コードはshift-jisになる
@@ -113,7 +153,7 @@ def create_currency_name(filename_fullpath: str) -> str:
     return file_path.stem.split("_")[0]
 
 
-def create_model_list(currenty_name: str, soup: bs4.BeautifulStoneSoup) -> list:
+def create_model_list(currenty_name: str, soup: bs4.BeautifulStoneSoup) -> list[DataModel]:
     element_table = soup.find_all("table")
 
     # print(element_table)
@@ -126,7 +166,7 @@ def create_model_list(currenty_name: str, soup: bs4.BeautifulStoneSoup) -> list:
     element_tr_list: list = element_target_table_soup.find_all("tr")
     del element_tr_list[0]
 
-    data_model_list: list = list()
+    data_model_list: list[DataModel] = list()
     for e in element_tr_list:
         e_soup: bs4.BeautifulStoneSoup = bs4.BeautifulSoup(str(e), "html.parser")
         td_list: list = e_soup.find_all("td")
@@ -136,49 +176,109 @@ def create_model_list(currenty_name: str, soup: bs4.BeautifulStoneSoup) -> list:
     return data_model_list
 
 
-def create_group_model_dict(model_list: list[DataModel]) -> dict:
+def create_param_group_model_dict(model_dict: dict[str, list[DataModel]]) -> dict[str, list[DataModel]]:
     group_model_dict: dict[str, list[DataModel]] = dict()
 
     count: int = 0
-    for model in model_list:
-        if not model.params in group_model_dict:
-            group_model_dict[model.params] = list()
+    for key, model_list in model_dict.items():
+        # パラメータをペアとしたモデルを作成
+        for model in model_list:
+            if not model.params in group_model_dict:
+                group_model_dict[model.params] = list()
 
-        group_model_dict[model.params].append(model)
-        if count < len(group_model_dict[model.params]):
-            count = len(group_model_dict[model.params])
+            group_model_dict[model.params].append(model)
+            if count < len(group_model_dict[model.params]):
+                count = len(group_model_dict[model.params])
 
-    # 各要素の配列数が一番高い要素のみ抽出
-    # 通貨の種類でそろっていないのは除外する(例: ドル円とポンドドルの2種類とドル円とユーロドルとオージドルの3種類なら3種類を採用)
-    return dict(filter(lambda item: count <= len(item[1]), group_model_dict.items()))
+    return group_model_dict
 
 
-def write_cell_ea_param(sheet, cell_name: str, model: GroupDataModel, param_name: str):
+def write_cell_ea_param(sheet, cell_name: str, model: ParamPairModel, param_name: str):
+    from openpyxl.comments import Comment
+
+    comment: Comment = None
     if param_name == "params":
         sheet[cell_name] = model.params
+        # コメントがあれば追加する
+        if model.get_comment_by_param() != "":
+            comment = Comment(model.get_comment_by_param(), "Comment Author")
+            comment.height = 400
     else:
         sheet[cell_name] = model.get_avg_val(type_name=param_name)
         # 小数点以下を2桁まで表示
         sheet[cell_name].number_format = "0.00"
-
-        from openpyxl.comments import Comment
-
         # 各通貨の情報をコメントにする
         comment = Comment(model.get_comment(type_name=param_name), "Comment Author")
         comment.height = 200
+
+    if comment is not None:
         sheet[cell_name].comment = comment
 
 
-def output_xlsx(dir_fullpath: str, filename: str, model_list: list[GroupDataModel]):
+def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPairModel], curreny_model_dict: dict[str, list[DataModel]]):
     file_path = Path(dir_fullpath) / "{}.xlsx".format(filename)
     file_path.unlink(True)
 
     # ブックを作成
     wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+    # シート名は通貨のペア数を元に作る
+    sheet = wb.create_sheet("{}通貨".format(len(curreny_model_dict)), 0)
 
-    sheet = wb["Sheet"]
-    header_list: list = [
+    # TODO: 成績表を作る
+    curreny_result_header_dict: dict[str, str]= {
+        "G": "通貨",
+        "H": "総合勝数",
+        "I": "総合負数",
+    }
+    for key, value in curreny_result_header_dict.items():
+        sheet["{}{}".format(key, 1)] = value
+
+    curreny_result_row: int = 2
+    for key, model_list in curreny_model_dict.items():
+        sheet["G" + str(curreny_result_row)] = key
+        sheet["H" + str(curreny_result_row)] = len(list(filter(lambda x: 1 <= x.profit_factor, model_list)))
+        sheet["I" + str(curreny_result_row)] = len(list(filter(lambda x: x.profit_factor < 1, model_list)))
+        curreny_result_row = curreny_result_row + 1
+
+    # 各パラメータのリストを作る
+    param_dict: dict[str, list[int | float]] = dict()
+    for model_list in pair_model_list:
+        for k, v in model_list.params_dict.items():
+            if not k in param_dict:
+                param_dict[k] = list()
+
+            param_dict[k].append(v)
+
+    row: int = 1
+    # テストパラメータのパターンを記入
+    for k, v in param_dict.items():
+        row_str: str = str(row)
+        # パラメータ名
+        sheet["A" + row_str] = k
+        # パラメータの最小
+        sheet["B" + row_str] = min(v)
+
+        # パラメータのステップ
+        # 重複なしにする
+        l_reverse_sorted = list(set(v))
+        # 降順にソート
+        l_reverse_sorted = sorted(l_reverse_sorted, reverse=True)
+        if len(l_reverse_sorted) == 0:
+            sheet["C" + row_str] = 0
+        elif len(l_reverse_sorted) == 1:
+            sheet["C" + row_str] = l_reverse_sorted[0]
+        else:
+            sheet["C" + row_str] = l_reverse_sorted[0] - l_reverse_sorted[1]
+
+        # パラメータの最大
+        sheet["D" + row_str] = max(v)
+
+        row = row + 1
+
+    param_result_header_list: list = [
         "NO",
+        "通貨数",
         "損益",
         "総取引数",
         "プロフィットファクタ",
@@ -189,86 +289,104 @@ def output_xlsx(dir_fullpath: str, filename: str, model_list: list[GroupDataMode
     ]
 
     name_col: int = 1
-    for name in header_list:
-        sheet.cell(row=1, column=name_col, value=name)
+    h_row = row
+    for name in param_result_header_list:
+        sheet.cell(row=h_row, column=name_col, value=name)
         name_col = name_col + 1
+    row = row + 1
 
-    count: int = 2
-    for model in model_list:
+    count: int = row
+    for model_list in pair_model_list:
         count_str = str(count)
         sheet["A" + count_str] = str(count - 1)
+        sheet["B" + count_str] = model_list.get_currency_count()
         write_cell_ea_param(
             sheet=sheet,
-            cell_name="B" + count_str,
-            model=model,
+            cell_name="C" + count_str,
+            model=model_list,
             param_name="prfoit_lost",
         )
         write_cell_ea_param(
             sheet=sheet,
-            cell_name="C" + count_str,
-            model=model,
+            cell_name="D" + count_str,
+            model=model_list,
             param_name="total_number_transactions",
         )
         write_cell_ea_param(
             sheet=sheet,
-            cell_name="D" + count_str,
-            model=model,
+            cell_name="E" + count_str,
+            model=model_list,
             param_name="profit_factor",
         )
         write_cell_ea_param(
             sheet=sheet,
-            cell_name="E" + count_str,
-            model=model,
+            cell_name="F" + count_str,
+            model=model_list,
             param_name="expected_gain",
         )
         write_cell_ea_param(
-            sheet=sheet, cell_name="F" + count_str, model=model, param_name="drawdown_d"
+            sheet=sheet, cell_name="G" + count_str, model=model_list, param_name="drawdown_d"
         )
         write_cell_ea_param(
-            sheet=sheet, cell_name="G" + count_str, model=model, param_name="drawdown_p"
+            sheet=sheet, cell_name="H" + count_str, model=model_list, param_name="drawdown_p"
         )
         write_cell_ea_param(
-            sheet=sheet, cell_name="H" + count_str, model=model, param_name="params"
+            sheet=sheet, cell_name="I" + count_str, model=model_list, param_name="params"
         )
 
         count = count + 1
     # オートフィルタ範囲の設定
-    sheet.auto_filter.ref = "{}:{}".format("A1", "G{}".format(count))
+    sheet.auto_filter.ref = "{}:{}".format("A{}".format(h_row), "G{}".format(count))
 
     # 保存
     wb.save(str(file_path))
 
 
-def get_target_file_list(dir_filenamt: str) -> list:
+def get_target_file_list(dir_filenamt: str, ignore_currenty_names: list) -> list:
     import glob
 
     file_fullpath: str = str(Path(dir_filenamt) / "*htm")
 
-    return glob.glob(file_fullpath)
+    if ignore_currenty_names is None:
+        return [f for f in glob.glob(file_fullpath)]
+    return [
+        f for f in glob.glob(file_fullpath) if not Path(f).stem in ignore_currenty_names
+    ]
 
-
-def create_param_fit_model_list(path_filename_list: list):
-    model_list: list = list()
+# 通貨データファイルから各通貨のデータモデルリストを通貨名をキーとした辞書として作成
+def create_currency_model_dict(path_filename_list: list) -> dict[str, list[DataModel]]:
+    currenty_model_dict: dict[str, list[DataModel]] = dict()
+    # 各通貨データファイルを解析して各通貨のモデルリストを作成
     for path_filename in path_filename_list:
         soup = load_mt4_html(path_filename)
         assert not soup is None
 
+        # 辞書のキーを通貨名にして通貨毎のデータモデルリストを作成
         currenty_name: str = create_currency_name(path_filename)
-        model_list.extend(create_model_list(currenty_name=currenty_name, soup=soup))
-        assert not model_list is None
-        assert 0 < len(model_list)
+        if not currenty_model_dict is currenty_name:
+            currenty_model_dict[currenty_name] = list()
 
-    group_model_dict: dict = create_group_model_dict(model_list=model_list)
-    assert not group_model_dict is None
-    assert 0 < len(group_model_dict)
+        # currenty_model_dict.extend(create_model_list(currenty_name=currenty_name, soup=soup))
+        currenty_model_dict[currenty_name] = create_model_list(currenty_name=currenty_name, soup=soup)
+        assert not currenty_model_dict[currenty_name] is None
+        assert 0 < len(currenty_model_dict)
 
-    avg_model_list: list[GroupDataModel] = list()
-    for key, value in group_model_dict.items():
-        # model: DataModel = get_avg_data_model(value)
-        model: GroupDataModel = get_avg_data_model(value)
-        avg_model_list.append(model)
+    return currenty_model_dict
 
-    return avg_model_list
+# 通貨毎のモデルデータリストからパラメータをペアとしたモデルリストをコンバート
+def conv_currenty_model_dict_to_param_pair_model_list(currenty_model_dict: dict[str, list[DataModel]]) -> list[ParamPairModel]:
+    # パラメータでまとめたモデル辞書作成
+    param_group_model_dict: dict[list[DataModel]] = create_param_group_model_dict(model_dict=currenty_model_dict)
+    assert not param_group_model_dict is None
+    assert 0 < len(param_group_model_dict)
+
+    # パラメータをペアとしたモデルリストを作成
+    param_pair_model_list: list[ParamPairModel] = list()
+    for key, value in param_group_model_dict.items():
+        model: ParamPairModel = ParamPairModel(model_list=value)
+        param_pair_model_list.append(model)
+
+    return param_pair_model_list
 
 
 def main():

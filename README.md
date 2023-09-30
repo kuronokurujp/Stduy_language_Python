@@ -204,8 +204,8 @@ Sample Python List
 1. settings.js に tests ディレクトリのパスを指定
    こんな感じ(cli_simple ディレクトリ中にあるテストコードが入っている tests ディレクトリを指定)
    "${workspaceFolder}/cli_simple/tests",
-1. test_xxx.pyというテスト用のpyファイルを作成
-    - __test.pyというファイルではテストフレームワークで認識しないので注意__
+1. test_xxx.py というテスト用の py ファイルを作成
+    - **test.py というファイルではテストフレームワークで認識しないので注意**
 
 -   参考サイト
     -   [pytest でのインストールについて分かった](https://rurukblog.com/post/vscode-pytest/)
@@ -227,12 +227,13 @@ Sample Python List
 
 ### pip でインストールしたパッケージ一覧をエクスポートとインポート方法
 
-- エクスポート方法
-    - 以下のコマンドでインストールしたパッケージ一覧を記載したファイルをエクスポートできる
+-   エクスポート方法
+
+    -   以下のコマンドでインストールしたパッケージ一覧を記載したファイルをエクスポートできる
         pip freeze > requirements.txt
 
-- インポート方法
-    - 以下のコマンドでrequirements.txtに記載したパッケージ一覧をインポートできる
+-   インポート方法
+    -   以下のコマンドで requirements.txt に記載したパッケージ一覧をインポートできる
         pip install -r requirements.txt
 
 ## ローカライズ対応
@@ -273,27 +274,41 @@ Sample Python List
 
 ## 開発メモ
 
-- クラスの__dict__にはクラス変数定義の要素が入っているが、__init__内でクラス変数定義しないと要素が入らない
-    - __dict__が要素に入らないケース
-    
-            class Test(object):
-                value: int = 0
+-   クラスの**dict**にはクラス変数定義の要素が入っているが、**init**内でクラス変数定義しないと要素が入らない
 
-            test: Test = Test()
-            # __dict__を出力しても空になっている
-            print(test.__dict__)
+    -   **dict**が要素に入らないケース
 
-     - __dict__に要素が入るケース
-    
-            class Test(object):
-                def __init__(self):
-                    self.value = 0
+              class Test(object):
+                  value: int = 0
 
-            test: Test = Test()
-            # __dict__を出力するとvalue要素がある
-            print(test.__dict__)
+              test: Test = Test()
+              # __dict__を出力しても空になっている
+              print(test.__dict__)
 
-   
+    -   **dict**に要素が入るケース
+
+             class Test(object):
+                 def __init__(self):
+                     self.value = 0
+
+             test: Test = Test()
+             # __dict__を出力するとvalue要素がある
+             print(test.__dict__)
+
+-   static ディレクトリは各アプリディレクト内で作成しないといけない
+    -   django で js ファイルを配置したかったので以下のサイトを参考にした
+        -   https://di-acc2.com/programming/python/20081/
+    -   この通りにやったのだが、js ファイルが読み込まれなかった
+    -   次に以下のサイトを参考にした
+        -   https://www.geeksforgeeks.org/django-static-file/
+    -   アプリディレクトリに static ディレクトリを作成してその中に js ファイルを配置した
+    -   このやり方だとうまくいった
+    -   static ディレクトリはアプリディレクトリで作成しないだめみたい
+    -   利用できる static ディレクトリを調べるコマンドがある
+        -   python.exe .\manage.py findstatic .
+        -   これで現在利用できる static ディレクトリ一覧が表示する
+            -   [参考サイト](https://qiita.com/okoppe8/items/38688fa9259f261c9440)
+
 ## 実行で参考にしたサイト
 
 -   [コマンドツールのエラーコード出力方法](https://yaromai.jp/python-exit/)
