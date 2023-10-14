@@ -62,11 +62,14 @@ def test_model_group():
     assert 0 < len(model_list)
     model_dict[currenty_name] = model_list
 
-    group_model_dict: dict[str, list[mt4.DataModel]] = mt4.create_param_group_model_dict(model_dict=model_dict)
+    group_model_dict: dict[
+        str, list[mt4.DataModel]
+    ] = mt4.create_param_group_model_dict(model_dict=model_dict)
     assert not group_model_dict is None
     assert 0 < len(group_model_dict)
 
     from pprint import pprint
+
     print()
     print("num({})".format(len(group_model_dict.values())))
     for key, value in group_model_dict.items():
@@ -118,6 +121,7 @@ def test_create_currency_model_dict():
     assert "AUDUSD" in dict
 
     from pprint import pprint
+
     for key, value in dict.items():
         assert not value is None
         assert 0 < len(value)
@@ -142,7 +146,7 @@ def test_output_xlsx():
         dir_fullpath="D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output",
         filename="D1",
         pair_model_list=avg_model_list,
-        curreny_model_dict=dict
+        curreny_model_dict=dict,
     )
 
 
@@ -173,34 +177,9 @@ def test_file_filter():
 
 def test_output_final_data():
     path_data_list: list = [
-        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\D1", "D1"],
-        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\H4", "H4"],
-        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\H1", "H1"],
-        # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data\H1", "H1"],
-        # [
-        #     "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data/20230915/M15",
-        #     "M15",
-        #     ["AUDJPY", "AUDUSD"],
-        # ],
-        # [
-        #     "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data/20230917/M30",
-        #     "M30",
-        #     ["AUDJPY", "AUDUSD"],
-        # ],
-        # # ["D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data/20230919/H1", "H1"],
-        # [
-        #     "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data/20230925/H4",
-        #     "H4",
-        #     ["AUDJPY", "AUDUSD"],
-        # ],
-        # [
-        #     "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data/20230925/D1",
-        #     "D1",
-        #     ["AUDJPY", "AUDUSD"],
-        # ],
         [
-            "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\data/new/H1",
-            "H1",
+            "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output/Report/20231014/H4",
+            "202310014_H4",
             None,
         ],
     ]
@@ -211,13 +190,17 @@ def test_output_final_data():
         )
         assert 0 < len(list)
 
-        dict: dict[str, list[mt4.DataModel]] = mt4.create_currency_model_dict(path_filename_list=list)
-        pair_model_list: list = mt4.conv_currenty_model_dict_to_param_pair_model_list(dict)
+        dict: dict[str, list[mt4.DataModel]] = mt4.create_currency_model_dict(
+            path_filename_list=list
+        )
+        pair_model_list: list = mt4.conv_currenty_model_dict_to_param_pair_model_list(
+            dict
+        )
 
         # 出力
         mt4.output_xlsx(
             dir_fullpath="D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output",
             filename=path_data[1],
             pair_model_list=pair_model_list,
-            curreny_model_dict=dict
+            curreny_model_dict=dict,
         )

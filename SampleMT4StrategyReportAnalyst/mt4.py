@@ -52,10 +52,6 @@ class DataModel(BaseDataModel):
         self.curreny_name = curreny_name
 
 
-# 各通貨のスコア
-class CurrencyScoreModel(object):
-    pass
-
 class ParamPairModel(object):
     def __init__(self, model_list: list) -> None:
         # パス
@@ -83,12 +79,6 @@ class ParamPairModel(object):
                     )
                     raise ex
 
-    # TODO: 各通貨での成績表を取得
-    def get_currency_score_dict(self) -> dict[str, CurrencyScoreModel]:
-        score_dict: dict[str, CurrencyScoreModel] = dict()
-
-        return score_dict
-
     def get_currency_count(self) -> int:
         return len(self.model_list)
 
@@ -114,27 +104,28 @@ class ParamPairModel(object):
         return comment
 
     def get_avg_val(self, type_name: str) -> float:
+
         match type_name:
             case "prfoit_lost":
                 # 損益
-                return statistics.mean([val.prfoit_lost for val in self.model_list])
+                return statistics.median([val.prfoit_lost for val in self.model_list])
             case "total_number_transactions":
                 # 総取引数
-                return statistics.mean(
+                return statistics.median(
                     [val.total_number_transactions for val in self.model_list]
                 )
             case "profit_factor":
                 # プロフィットファクタ
-                return statistics.mean([val.profit_factor for val in self.model_list])
+                return statistics.median([val.profit_factor for val in self.model_list])
             case "expected_gain":
                 # 期待利得
-                return statistics.mean([val.expected_gain for val in self.model_list])
+                return statistics.median([val.expected_gain for val in self.model_list])
             case "drawdown_d":
                 # ドローダウン $
-                return statistics.mean([val.drawdown_d for val in self.model_list])
+                return statistics.median([val.drawdown_d for val in self.model_list])
             case "drawdown_p":
                 # ドローダウン %
-                return statistics.mean([val.drawdown_p for val in self.model_list])
+                return statistics.median([val.drawdown_p for val in self.model_list])
 
         return 0.0
 
@@ -193,6 +184,12 @@ def create_param_group_model_dict(model_dict: dict[str, list[DataModel]]) -> dic
     return group_model_dict
 
 
+# floatをセル書き込み
+def write_cell_float(sheet, cell_name: str, val: float):
+    sheet[cell_name] = val
+    # 小数点以下を2桁まで表示
+    sheet[cell_name].number_format = "0.00"
+
 def write_cell_ea_param(sheet, cell_name: str, model: ParamPairModel, param_name: str):
     from openpyxl.comments import Comment
 
@@ -204,9 +201,10 @@ def write_cell_ea_param(sheet, cell_name: str, model: ParamPairModel, param_name
             comment = Comment(model.get_comment_by_param(), "Comment Author")
             comment.height = 400
     else:
-        sheet[cell_name] = model.get_avg_val(type_name=param_name)
-        # 小数点以下を2桁まで表示
-        sheet[cell_name].number_format = "0.00"
+        write_cell_float(sheet, cell_name, model.get_avg_val(type_name=param_name))
+        # sheet[cell_name] = model.get_avg_val(type_name=param_name)
+        # # 小数点以下を2桁まで表示
+        # sheet[cell_name].number_format = "0.00"
         # 各通貨の情報をコメントにする
         comment = Comment(model.get_comment(type_name=param_name), "Comment Author")
         comment.height = 200
@@ -228,17 +226,33 @@ def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPai
     # TODO: 成績表を作る
     curreny_result_header_dict: dict[str, str]= {
         "G": "通貨",
-        "H": "総合勝数",
-        "I": "総合負数",
+        "H": "利益を出したパターン数",
+        "I": "損失を出したパターン数",
+        "J": "利益も損失も出していないパターン数",
+        "K": "損益の中央値",
+        "L": "総取引数の中央値",
+        "M": "プロフィットファクターの中央値",
+        "N": "期待利得の中央値",
+        "O": "ドローダウン$の中央値",
+        "P": "ドローダウン%の中央値",
     }
     for key, value in curreny_result_header_dict.items():
         sheet["{}{}".format(key, 1)] = value
 
+    from statistics import mean, median
     curreny_result_row: int = 2
     for key, model_list in curreny_model_dict.items():
         sheet["G" + str(curreny_result_row)] = key
-        sheet["H" + str(curreny_result_row)] = len(list(filter(lambda x: 1 <= x.profit_factor, model_list)))
+        sheet["H" + str(curreny_result_row)] = len(list(filter(lambda x: 1 < x.profit_factor, model_list)))
         sheet["I" + str(curreny_result_row)] = len(list(filter(lambda x: x.profit_factor < 1, model_list)))
+        sheet["J" + str(curreny_result_row)] = len(list(filter(lambda x: x.profit_factor == 1.0, model_list)))
+
+        write_cell_float(sheet, "K" + str(curreny_result_row), median([x.prfoit_lost for x in model_list]))
+        write_cell_float(sheet, "L" + str(curreny_result_row), median([x.total_number_transactions for x in model_list]))
+        write_cell_float(sheet, "M" + str(curreny_result_row), median([x.profit_factor for x in model_list]))
+        write_cell_float(sheet, "N" + str(curreny_result_row), median([x.expected_gain for x in model_list]))
+        write_cell_float(sheet, "O" + str(curreny_result_row), median([x.drawdown_d for x in model_list]))
+        write_cell_float(sheet, "P" + str(curreny_result_row), median([x.drawdown_p for x in model_list]))
         curreny_result_row = curreny_result_row + 1
 
     # 各パラメータのリストを作る
