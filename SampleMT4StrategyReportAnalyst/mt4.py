@@ -247,12 +247,16 @@ def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPai
         sheet["I" + str(curreny_result_row)] = len(list(filter(lambda x: x.profit_factor < 1, model_list)))
         sheet["J" + str(curreny_result_row)] = len(list(filter(lambda x: x.profit_factor == 1.0, model_list)))
 
-        write_cell_float(sheet, "K" + str(curreny_result_row), median([x.prfoit_lost for x in model_list]))
-        write_cell_float(sheet, "L" + str(curreny_result_row), median([x.total_number_transactions for x in model_list]))
-        write_cell_float(sheet, "M" + str(curreny_result_row), median([x.profit_factor for x in model_list]))
-        write_cell_float(sheet, "N" + str(curreny_result_row), median([x.expected_gain for x in model_list]))
-        write_cell_float(sheet, "O" + str(curreny_result_row), median([x.drawdown_d for x in model_list]))
-        write_cell_float(sheet, "P" + str(curreny_result_row), median([x.drawdown_p for x in model_list]))
+        if 0 < len(model_list):
+            write_cell_float(sheet, "K" + str(curreny_result_row), median([x.prfoit_lost for x in model_list]))
+            write_cell_float(sheet, "L" + str(curreny_result_row), median([x.total_number_transactions for x in model_list]))
+            write_cell_float(sheet, "M" + str(curreny_result_row), median([x.profit_factor for x in model_list]))
+            write_cell_float(sheet, "N" + str(curreny_result_row), median([x.expected_gain for x in model_list]))
+            write_cell_float(sheet, "O" + str(curreny_result_row), median([x.drawdown_d for x in model_list]))
+            write_cell_float(sheet, "P" + str(curreny_result_row), median([x.drawdown_p for x in model_list]))
+        else:
+            sheet["F" + str(curreny_result_row)] = "データがない"
+
         curreny_result_row = curreny_result_row + 1
 
     # 各パラメータのリストを作る

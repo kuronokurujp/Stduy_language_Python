@@ -178,8 +178,8 @@ def test_file_filter():
 def test_output_final_data():
     path_data_list: list = [
         [
-            "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output/Report/20231014/H4",
-            "202310014_H4",
+            "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output/20231024/M15",
+            "202310024_M15",
             None,
         ],
     ]
