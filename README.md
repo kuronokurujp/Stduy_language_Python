@@ -236,7 +236,9 @@ Sample Python List
     -   以下のコマンドで requirements.txt に記載したパッケージ一覧をインポートできる
         pip install -r requirements.txt
 
-## ローカライズ対応
+## Djang
+
+### ローカライズ対応
 
 -   以下のサイトをまず参考にした
     -   https://blog.narito.ninja/detail/86/
