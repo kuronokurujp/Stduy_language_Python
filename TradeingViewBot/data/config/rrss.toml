@@ -1,0 +1,14 @@
+[config]
+# rakuten rss excel file
+RRSS_EXCEL_FILEPATH="data/excel/rrss.xlsm"
+
+# rakuten rss オーダーとクローズ条件フラグ
+ORDER_FLG_SELL_CELL="BC33"
+ORDER_FLG_BUY_CELL="BE33"
+CLOSE_FLG_SELL_CELL="BC34"
+CLOSE_FLG_BUY_CELL="BE34"
+
+# rakuten rss 買いと売りのポジション数
+POSTION_SELL_CELL="BB33"
+POSTION_BUY_CELL="BD33"
+
