@@ -19,13 +19,18 @@
             "level": "INFO",
             "formatter": "simple",
             "filename": "to be replaced"
+        },
+        "printHandler": {
+            "class": "modules.log.logger.PrintHandler",
+            "level": "INFO",
+            "formatter": "simple"
         }
     },
 
     "loggers": {
         "modules.log.logger": {
             "level": "DEBUG",
-            "handlers": ["consoleHandler", "fileHandler"],
+            "handlers": ["fileHandler", "printHandler"],
             "propagate": false
         }
     },

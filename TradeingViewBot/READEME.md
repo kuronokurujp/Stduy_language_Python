@@ -16,8 +16,6 @@
         - 楽天RSSの注文を行える(予定)
 
 ## 参考サイト
-- [GUIクライアントをwxPythonで作成](https://zero-cheese.com/6667/)
-- [GUIクライアントをFletで作成](https://qiita.com/NasuPanda/items/48849d7f925784d6b6a0)
 - [トレーディングビューのアラート通知を受け取る](https://note.com/mioka_/n/n62b2615ca1cc)
 - [ngrokを使ったローカルサーバー構築](https://zenn.dev/yu1low/articles/459fc8023e80a2)
 - [log処理の実装方法](https://qiita.com/FukuharaYohei/items/92795107032c8c0bfd19)
@@ -29,4 +27,5 @@
 - [HttpServerクラスのserver_foreverを別スレッドにしてブロック状態にしない方法(Asynchronous Mixins項目に注目)](https://docs.python.org/3/library/socketserver.html)
 - [webhookの送信テストコード](https://laboratory.kazuuu.net/sending-a-webhook-using-request-in-python/)
 - [PythonでVBAのメソッドを呼ぶ方法](https://fastclassinfo.com/entry/run_excelvba_from_python/)
-- [wxPythonのUIをGUIツールで作成](https://zenn.dev/naonaorange/articles/20190815_wxpython_wxformbuilder)
+- [抽象クラスの作成方法](https://qiita.com/TrashBoxx/items/7a76e46122191529c526)
+- [PySimpleGUIのデモプログラム](https://github.com/PySimpleGUI/PySimpleGUI/tree/master/DemoPrograms)

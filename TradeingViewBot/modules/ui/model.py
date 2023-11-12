@@ -4,7 +4,7 @@
 # TODO: ツールのモデル
 class Model(object):
     __title: str = "トレーディングビューボット"
-    __size: tuple[int, int] = (1024, 728)
+    __size: tuple[int, int] = (512, 364)
 
     @property
     def title(self) -> str:
