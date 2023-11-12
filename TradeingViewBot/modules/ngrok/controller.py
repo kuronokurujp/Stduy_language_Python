@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import asyncio
 from modules.log.logger import AppLogger
+import modules.ngrok.interface
 from collections.abc import Callable
 import threading
 import json
@@ -79,7 +80,7 @@ class NgrokHttpRequestHandler(BaseHTTPRequestHandler):
 
 
 # ngrokを制御するクラス
-class Controller(object):
+class Controller(modules.ngrok.interface.INgrokController):
     # このモデルは初期化後にも変更可能
     __model: modules.ngrok.model.Model = None
     __ngrok_listener: ngrok.Listener = None
@@ -159,10 +160,21 @@ class Controller(object):
         # この呼び方をしないと以下のエラーが出た
         # 理由不明
         # RuntimeError: Event loop is closed
-        return asyncio.run(self._cmd_stop_listen())
+        return asyncio.run(self.__cmd_stop_listen())
+
+    def get_url(self) -> str:
+        if self.__ngrok_listener is None:
+            return ""
+
+        return self.__ngrok_listener.url()
+
+    def do_post(self, req_body_json: dict):
+        if self.__logger is not None:
+            self.__logger.info("post {}".format(req_body_json))
+        # TODO: コールバックを呼ぶ
 
     # ngrokのhttp通知の受け取りを終了
-    async def _cmd_stop_listen(self) -> tuple[bool, str]:
+    async def __cmd_stop_listen(self) -> tuple[bool, str]:
         if self.__logger is not None:
             self.__logger.info("stop ngrok")
 
@@ -193,13 +205,3 @@ class Controller(object):
         finally:
             return bRet, msg
 
-    def get_url(self) -> str:
-        if self.__ngrok_listener is None:
-            return ""
-
-        return self.__ngrok_listener.url()
-
-    def do_post(self, req_body_json: dict):
-        if self.__logger is not None:
-            self.__logger.info("post {}".format(req_body_json))
-        # TODO: コールバックを呼ぶ

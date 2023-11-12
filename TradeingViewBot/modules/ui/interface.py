@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#!/usr/bin/env python
 from abc import ABC, abstractmethod
 
 
@@ -11,3 +12,8 @@ class IUIViewEvent(ABC):
     @abstractmethod
     def event_run_trade(self):
         raise NotImplementedError()
+
+    @abstractmethod
+    def event_update(self):
+        raise NotImplementedError()
+

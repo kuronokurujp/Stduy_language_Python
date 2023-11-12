@@ -52,7 +52,7 @@ class View(object):
 
         sg.theme("Dark")
 
-    def open(self):
+    def open(self, b_screen: bool = False):
         self.__window = sg.Window(
             title=self.__title,
             layout=[self.__layout, [sg.VPush()], self.__layout_tab, self.__status_bar],
@@ -62,6 +62,8 @@ class View(object):
             enable_close_attempted_event=True,
             finalize=True,
         )
+        if b_screen:
+            self.__window.maximize()
 
         self.__event_interface.event_open()
         while True:
@@ -77,10 +79,16 @@ class View(object):
             elif event in (self._EVT_BTN_RUN_TRADE):
                 self.__event_interface.event_run_trade()
 
+            self.__event_interface.event_update()
+
         self.close()
 
     def close(self):
         self.__window.close()
+
+    # TODO: 取引ボタン有効設定
+    def setEnableByBtnRunTrade(self, enable: bool):
+        self.__window[self._EVT_BTN_RUN_TRADE].update(disabled=not enable)
 
     def __create_menubar(self) -> sg.Menu:
         return sg.Menu(

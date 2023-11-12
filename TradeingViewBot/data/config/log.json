@@ -18,7 +18,8 @@
             "class": "logging.FileHandler",
             "level": "INFO",
             "formatter": "simple",
-            "filename": "to be replaced"
+            "filename": "to be replaced",
+            "encoding": "utf-8"
         },
         "printHandler": {
             "class": "modules.log.logger.PrintHandler",
