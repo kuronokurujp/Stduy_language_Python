@@ -48,6 +48,8 @@ def test_webhook_request():
     import json
 
     webhook_url = ngrok_ctrl.get_url()
+    # URLに別のパスを追加することができる
+    webhook_url = "{}/25f4b493-85fe-11ee-92c2-7c7635fff5e0".format(webhook_url)
     print(webhook_url)
 
 #    data = {"名前": "テスト太郎", "性別": "男性", "URL": "https://dummy"}

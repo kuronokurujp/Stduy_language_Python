@@ -51,10 +51,10 @@ class TestUICtrl02(app.controller.Controller):
 
     def event_update(self):
         if self.count <= 30:
-            self.view.setEnableByBtnRunTrade(enable=False)
+            self.view.enable_trade(b_enable=False)
 
         elif 60 <= self.count:
-            self.view.setEnableByBtnRunTrade(enable=True)
+            self.view.enable_trade(b_enable=True)
 
             if 120 <= self.count:
                 self.count = 0

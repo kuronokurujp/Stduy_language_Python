@@ -29,3 +29,5 @@
 - [PythonでVBAのメソッドを呼ぶ方法](https://fastclassinfo.com/entry/run_excelvba_from_python/)
 - [抽象クラスの作成方法](https://qiita.com/TrashBoxx/items/7a76e46122191529c526)
 - [PySimpleGUIのデモプログラム](https://github.com/PySimpleGUI/PySimpleGUI/tree/master/DemoPrograms)
+- [GUIDの作成方法](https://stackoverflow.com/questions/3530294/how-to-generate-unique-64-bits-integers-from-python)
+- [PySimpleGUIのTableの指定列を表示設定](https://serverarekore.blogspot.com/2021/12/pysimplegui.html)

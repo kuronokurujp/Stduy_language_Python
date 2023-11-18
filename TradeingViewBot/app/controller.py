@@ -5,12 +5,13 @@ import modules.log.interface
 import modules.ngrok.controller
 import modules.ngrok.interface
 import modules.ngrok.model
+import modules.strategy.object
 import app.model
 
 
 # TODO: アプリ制御
 class Controller(modules.ui.interface.IUIViewEvent):
-    __view: modules.ui.view.View = None
+    __view_ctrl: modules.ui.view.ViewController = None
     __model: app.model.Model = None
     __logger: modules.log.interface.ILoegger = None
 
@@ -20,8 +21,8 @@ class Controller(modules.ui.interface.IUIViewEvent):
     __b_run_trade: bool = False
 
     @property
-    def view(self) -> modules.ui.view.View:
-        return self.__view
+    def view(self) -> modules.ui.view.ViewController:
+        return self.__view_ctrl
 
     def __init__(
         self, model: app.model.Model, logger: modules.log.interface.ILoegger = None
@@ -29,7 +30,7 @@ class Controller(modules.ui.interface.IUIViewEvent):
         self.__model = model
 
         self.__ngrok_ctrl = self._create_ngrok_ctrl(self.__model.ngrok_model)
-        self.__view = modules.ui.view.View(
+        self.__view_ctrl = modules.ui.view.ViewController(
             title=self.__model.ui_model.title,
             size=self.__model.ui_model.size,
             event_i=self,
@@ -46,7 +47,7 @@ class Controller(modules.ui.interface.IUIViewEvent):
 
     def open(self):
         # 初期表示は画面サイズをフルに
-        self.__view.open(b_screen=True)
+        self.__view_ctrl.open(b_screen=True)
 
     # 開始
     def event_open(self):
@@ -58,7 +59,7 @@ class Controller(modules.ui.interface.IUIViewEvent):
 
     # TODO: トレード開始
     def event_run_trade(self):
-        self.__view.setEnableByBtnRunTrade(enable=False)
+        self.__view_ctrl.enable_trade(b_enable=False)
         if not self.__b_run_trade:
             bRet, msg = self.__ngrok_ctrl.cmd_start_listen()
             if bRet:
@@ -70,7 +71,7 @@ class Controller(modules.ui.interface.IUIViewEvent):
             else:
                 self.__logger.info("トレード開始に失敗: {}".format(msg))
 
-            self.__view.setEnableByBtnRunTrade(enable=True)
+            self.__view_ctrl.enable_trade(b_enable=True)
         else:
             bRet, msg = self.__ngrok_ctrl.cmd_stop_listen()
             if bRet:
@@ -79,4 +80,27 @@ class Controller(modules.ui.interface.IUIViewEvent):
             else:
                 self.__logger.info("トレード停止に失敗: {}".format(msg))
 
-            self.__view.setEnableByBtnRunTrade(enable=True)
+            self.__view_ctrl.enable_trade(b_enable=True)
+
+    # TODO: 戦略フォーム画面を開く
+    def even_open_strategy_form(self):
+        # TODO: 戦略追加のウィンドウが必要
+        # メインウィンドウの入力はだめ
+        self.__view_ctrl.open_strategy_form()
+
+    # TODO: 戦略を追加
+    def even_add_strategy(self, name: str):
+        b_flg, msg, id = self.__model.add_strategy(
+            name=name, url=self.__ngrok_ctrl.get_url()
+        )
+        if b_flg:
+            self.__logger.info(msg)
+            # TODO: 戦略テーブルに追加
+            object: modules.strategy.object.DataObject = self.__model.get_strategy(id)
+            self.__view_ctrl.add_item_strategy(id=id, name=object.name, url=object.url)
+        else:
+            self.__logger.err(msg)
+
+    # TODO: エラー
+    def event_error(self, ex: Exception):
+        self.__logger.err(ex)
