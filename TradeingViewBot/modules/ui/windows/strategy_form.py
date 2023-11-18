@@ -18,7 +18,8 @@ class StrategyFormWindow(BaseWindow):
         ]
 
     def open(self, b_screen: bool) -> bool:
-        super().open(b_screen=b_screen, layout=[self.__layout])
+        # 表示する時は他のウィンドウは操作させない
+        super().open(b_screen=b_screen, layout=[self.__layout], b_model=True)
 
     def update(self, event_interface: IUIViewEvent) -> bool:
         event, value = self._window.read(timeout=1)
