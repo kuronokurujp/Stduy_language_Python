@@ -354,7 +354,7 @@ def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPai
 
         count = count + 1
     # オートフィルタ範囲の設定
-    sheet.auto_filter.ref = "{}:{}".format("A{}".format(h_row), "G{}".format(count))
+    sheet.auto_filter.ref = "{}:{}".format("A{}".format(h_row), "I{}".format(count))
 
     # 保存
     wb.save(str(file_path))
