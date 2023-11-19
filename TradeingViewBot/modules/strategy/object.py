@@ -9,10 +9,12 @@ class DataObject(object):
     # 32bitにはならない？
     __name: str = ""
     __url: str = ""
+    __b_demo: bool = True
 
-    def __init__(self, name: str, url: str) -> None:
+    def __init__(self, name: str, b_demo: bool, url: str) -> None:
         self.__name = name
         self.__url = url
+        self.__b_demo = b_demo
 
     @property
     def name(self) -> str:
@@ -21,6 +23,10 @@ class DataObject(object):
     @property
     def url(self) -> str:
         return self.__url
+
+    @property
+    def demo(self) -> bool:
+        return self.__b_demo
 
 
 # TODO: ストラテジーのデータオブジェクト管理
@@ -36,14 +42,16 @@ class DataObjectManager(object):
         pass
 
     # TODO: オブジェクトの追加
-    def add_object(self, name: str, url: str) -> tuple[bool, str, int]:
+    def add_object(self, name: str, url: str, b_demo: bool) -> tuple[bool, str, int]:
         # TODO: 検証処理の追加が必要
 
         # ユニークなIDを作る
         guid = uuid.uuid1()
         id: int = int.from_bytes(guid.bytes, byteorder="big", signed=True) >> 64
         # URLの後ろにユニークなIDをつけて一意なURLを作成
-        object: DataObject = DataObject(name=name, url="{}/{}".format(url, guid))
+        object: DataObject = DataObject(
+            name=name, url="{}/{}".format(url, guid), b_demo=b_demo
+        )
 
         self.__objects[id] = object
 

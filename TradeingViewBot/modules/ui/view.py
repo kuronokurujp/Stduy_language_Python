@@ -63,7 +63,9 @@ class ViewController(object):
         self.__main_win.close()
 
     def open_strategy_form(self):
-        form_win: StrategyFormWindow = StrategyFormWindow("追加する戦略設定", size=(300, 200))
+        form_win: StrategyFormWindow = StrategyFormWindow(
+            "戦略設定", size=(300, 200), b_demo=True
+        )
         form_win.open(b_screen=False)
         self.__child_win.append(form_win)
 
@@ -72,6 +74,10 @@ class ViewController(object):
         self.__main_win.enable_btn_trade(b_enable=b_enable)
 
     # TODO: 戦略項目を追加
-    def add_item_strategy(self, id: int, name: str, url: str):
-        self.__strategy_datas.append([id, name, url])
+    def add_item_strategy(self, id: int, b_demo: bool, name: str, url: str):
+        trade_name: str = "リアル"
+        if b_demo:
+            trade_name = "デモ"
+
+        self.__strategy_datas.append([id, trade_name, name, url])
         self.__main_win.update_strategy_table(datas=self.__strategy_datas)

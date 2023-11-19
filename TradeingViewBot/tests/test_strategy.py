@@ -8,7 +8,7 @@ def test_add_strategy():
     )
 
     for i in range(100):
-        b_flg, msg, id = data_manager.add_object(name="test", url="https://test.co.com")
+        b_flg, msg, id = data_manager.add_object(name="test", url="https://test.co.com", b_demo=True)
         print(msg)
         assert b_flg
 
@@ -19,7 +19,7 @@ def test_del_strategy():
     )
 
     for i in range(100):
-        b_flg, msg, id = data_manager.add_object(name="test", url="https://test.co.com")
+        b_flg, msg, id = data_manager.add_object(name="test", url="https://test.co.com", b_demo=True)
         print(msg)
         assert b_flg
 

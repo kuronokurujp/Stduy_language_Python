@@ -18,11 +18,15 @@ class IUIViewEvent(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def even_open_strategy_form(self):
+    def event_new_strategy(self):
         raise NotImplementedError()
 
     @abstractmethod
-    def even_add_strategy(self, name: str):
+    def event_update_strategy(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def even_add_strategy(self, name: str, b_demo: bool):
         raise NotImplementedError()
 
     @abstractmethod

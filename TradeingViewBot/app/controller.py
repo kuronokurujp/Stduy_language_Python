@@ -64,9 +64,9 @@ class Controller(modules.ui.interface.IUIViewEvent):
             bRet, msg = self.__ngrok_ctrl.cmd_start_listen()
             if bRet:
                 self.__logger.info("トレード開始: {}".format(msg))
-                self.__logger.info(
-                    "WebHookのURL: {}".format(self.__ngrok_ctrl.get_url())
-                )
+                # self.__logger.info(
+                #     "WebHookのURL: {}".format(self.__ngrok_ctrl.get_url())
+                # )
                 self.__b_run_trade = True
             else:
                 self.__logger.info("トレード開始に失敗: {}".format(msg))
@@ -82,22 +82,31 @@ class Controller(modules.ui.interface.IUIViewEvent):
 
             self.__view_ctrl.enable_trade(b_enable=True)
 
-    # TODO: 戦略フォーム画面を開く
-    def even_open_strategy_form(self):
-        # TODO: 戦略追加のウィンドウが必要
+    # 戦略を新規追加
+    def event_new_strategy(self):
+        # 戦略追加のウィンドウが必要
         # メインウィンドウの入力はだめ
         self.__view_ctrl.open_strategy_form()
 
+    # TODO: 戦略を更新
+    def event_update_strategy(self):
+        # TODO: 戦略追加のウィンドウが必要
+        # メインウィンドウの入力はだめ
+        # すでに設定しているパラメータを設定
+        self.__view_ctrl.open_strategy_form()
+
     # TODO: 戦略を追加
-    def even_add_strategy(self, name: str):
+    def even_add_strategy(self, name: str, b_demo: bool):
         b_flg, msg, id = self.__model.add_strategy(
-            name=name, url=self.__ngrok_ctrl.get_url()
+            name=name, url=self.__ngrok_ctrl.get_url(), b_demo=b_demo
         )
         if b_flg:
-            self.__logger.info(msg)
+            # self.__logger.info(msg)
             # TODO: 戦略テーブルに追加
             object: modules.strategy.object.DataObject = self.__model.get_strategy(id)
-            self.__view_ctrl.add_item_strategy(id=id, name=object.name, url=object.url)
+            self.__view_ctrl.add_item_strategy(
+                id=id, b_demo=object.demo, name=object.name, url=object.url
+            )
         else:
             self.__logger.err(msg)
 

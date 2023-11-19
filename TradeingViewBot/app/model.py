@@ -28,8 +28,8 @@ class Model(object):
                 config_tomlfile_path=ngrok_config_path
             )
 
-    def add_strategy(self, name: str, url: str) -> tuple[bool, str, int]:
-        return self.__strategy_data_manager.add_object(name=name, url=url)
+    def add_strategy(self, name: str, url: str, b_demo: bool) -> tuple[bool, str, int]:
+        return self.__strategy_data_manager.add_object(name=name, url=url, b_demo=b_demo)
 
     def del_strategy(self, id: int) -> tuple[bool, str]:
         return self.__strategy_data_manager.del_object(id=id)

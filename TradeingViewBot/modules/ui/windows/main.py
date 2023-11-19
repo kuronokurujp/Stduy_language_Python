@@ -16,6 +16,14 @@ class MainWindow(BaseWindow):
     __KEY_ACCOUNT_HI_TABLE: str = "K_MW_ACCOUNT_HI_TABLE"
     __KEY_TRANSACTION_TABLE: str = "K_MW_TRANSACRION_TABLE"
 
+    # 右クリックを押した時の戦略テーブルのプルダウンメニュー一覧
+    # 項目名::キー
+    # キーは画面に表示しない
+    __KEY_STRATEGY_SETTING: str = "設定::STRATEGY_MENU"
+    __KEY_STRATEGY_TRADE_BUY: str = "新規買::STRATEGY_MENU"
+    __KEY_STRATEGY_TRADE_SELL: str = "新規売::STRATEGY_MENU"
+    __KEY_STRATEGY_TRADE_ALL_CLOSE: str = "全決済::STRATEGY_MENU"
+
     def __init__(self, title: str, size) -> None:
         super().__init__(title=title, size=size)
 
@@ -36,10 +44,10 @@ class MainWindow(BaseWindow):
                             "口座履歴",
                             self.__create_accunt_history_layout(),
                         ),
-                        sg.Tab(
-                            "サーバー",
-                            self.__create_server_info_layout(),
-                        ),
+                        # sg.Tab(
+                        #     "サーバー",
+                        #     self.__create_server_info_layout(),
+                        # ),
                         sg.Tab(
                             "操作履歴",
                             self.__create_outputlog_layout(),
@@ -58,24 +66,65 @@ class MainWindow(BaseWindow):
             layout=[self.__layout, [sg.VPush()], self.__layout_tab, self.__status_bar],
         )
 
+        self.__st_table = self._window[self.__KEY_STRATEGY_TABLE]
+        treeview = self.__st_table.widget
+
+        # TODO: 別テーブルでも似たようなことするかも知れないので共通処理にしたほうがいいかも
+        def __update_event_st_table_click(event):
+            self.__st_table.user_bind_event = event
+            self.__st_table._table_clicked(event)
+
+        treeview.bind("<Button-1>", __update_event_st_table_click)
+        if sg.running_mac():
+            treeview.bind("<Button-2>", __update_event_st_table_click)
+        else:
+            treeview.bind("<Button-3>", __update_event_st_table_click)
+
     def update(self, event_interface: IUIViewEvent) -> bool:
         event, value = self._window.read(timeout=1)
+
         match event:
             case (sg.WIN_CLOSED, "Exit"):
                 return False
-            # TODO: 自動売買ボタンを押した
+            # 自動売買ボタンを押した
             case self.__EVT_BTN_RUN_TRADE:
                 event_interface.event_run_trade()
-            # TODO: 戦略追加
+            # 戦略を追加時の設定
             case self.__EVT_BTN_ADD_STRATEGY:
-                # TODO: 名前の設定が必要
-                event_interface.even_open_strategy_form()
+                event_interface.event_new_strategy()
             case sg.WINDOW_CLOSE_ATTEMPTED_EVENT:
                 return False
-
+                # 閉じる時に確認画面は不要と判断
                 # yn = sg.PopupYesNo("終了しますか?", font=("MeiryoUI", 10), keep_on_top=True)
                 # if yn == "Yes":
                 #     return False
+            case self.__KEY_STRATEGY_SETTING:
+                # TODO: 戦略設定画面を開く
+                pass
+            case self.__KEY_STRATEGY_TRADE_BUY:
+                # TODO: 選択した戦略で手動買い注文
+                pass
+            case self.__KEY_STRATEGY_TRADE_SELL:
+                # TODO: 選択した戦略で手動売り注文
+                pass
+            case self.__KEY_STRATEGY_TRADE_ALL_CLOSE:
+                # TODO: 選択した戦略の全決済
+                pass
+        if (
+            isinstance(event, tuple)
+            and len(event) == 3
+            and event[:2] == (self.__KEY_STRATEGY_TABLE, "+CLICKED+")
+        ):
+            # 右クリックのみ反応させる
+            if event[2][0] is not None:
+                mouse = self.__st_table.user_bind_event.num
+                # 左クリック押したら選択解除
+                if mouse == 1:
+                    self.__st_table.update(self.__st_table.get())
+                    # print("L click")
+                else:
+                    # クリックしたセル情報がeventにタプル型で入っている
+                    pass
 
         return True
 
@@ -112,6 +161,7 @@ class MainWindow(BaseWindow):
     def __create_server_info_layout(self):
         return [[sg.Multiline(size=(0, 50), expand_x=True, write_only=True)]]
 
+    # TODO: 左クリック押したら選択解除
     # TODO: 口座履歴
     def __create_accunt_history_layout(self):
         # TODO: 列名とデータキー名のマッピング作る
@@ -146,7 +196,6 @@ class MainWindow(BaseWindow):
                     expand_y=False,
                     vertical_scroll_only=False,
                     enable_click_events=True,  # Comment out to not enable header and other clicks
-                    tooltip="",
                 )
             ],
         )
@@ -157,14 +206,18 @@ class MainWindow(BaseWindow):
     # TODO: 戦略レイアウト
     def __create_strategy_layout(self):
         # 列名が同じだと横のレイアウトサイズが壊れた
-        headers: list = ["ID", "戦略", "WebhookURL"]
-        visible_columns = [False, True, True]
+        # TODO: テーブルのヘッダーなど各列を要素にしてリストにまとめることはできないかな
+        # 以下のやり方だと列追加でバグが起きやすい
+        headers: list = ["ID", "取引", "戦略", "WebhookURL"]
+        visible_columns: list[bool] = [False, True, True, False]
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
 
         return (
             [
                 sg.Table(
                     values=[],
+                    # 1行のみ選択
+                    select_mode=sg.TABLE_SELECT_MODE_BROWSE,
                     headings=headings,
                     max_col_width=25,
                     auto_size_columns=True,
@@ -174,13 +227,24 @@ class MainWindow(BaseWindow):
                     alternating_row_color="lightblue",
                     key=self.__KEY_STRATEGY_TABLE,
                     selected_row_colors="red on yellow",
-                    enable_events=True,
+                    # enable_events=True,
                     expand_x=True,
                     expand_y=False,
                     vertical_scroll_only=False,
-                    enable_click_events=True,  # Comment out to not enable header and other clicks
-                    tooltip="",
                     visible_column_map=visible_columns,
+                    # 右クリックで選択？
+                    enable_click_events=True,  # Comment out to not enable header and other clicks
+                    right_click_selects=True,
+                    # 押せるかどうか制御できる？
+                    right_click_menu=[
+                        "",
+                        [
+                            self.__KEY_STRATEGY_SETTING,
+                            self.__KEY_STRATEGY_TRADE_BUY,
+                            self.__KEY_STRATEGY_TRADE_SELL,
+                            self.__KEY_STRATEGY_TRADE_ALL_CLOSE,
+                        ],
+                    ],
                 )
             ],
         )
@@ -210,7 +274,6 @@ class MainWindow(BaseWindow):
                     expand_y=False,
                     vertical_scroll_only=False,
                     enable_click_events=True,  # Comment out to not enable header and other clicks
-                    tooltip="",
                 )
             ],
         )
