@@ -311,7 +311,7 @@ Sample Python List
         -   これで現在利用できる static ディレクトリ一覧が表示する
             -   [参考サイト](https://qiita.com/okoppe8/items/38688fa9259f261c9440)
 
-## 実行で参考にしたサイト
+## 参考サイト
 
 -   [コマンドツールのエラーコード出力方法](https://yaromai.jp/python-exit/)
 -   [Json の制御](https://qiita.com/Morio/items/7538a939cc441367070d)
