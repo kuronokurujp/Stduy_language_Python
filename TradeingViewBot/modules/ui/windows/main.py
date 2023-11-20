@@ -128,11 +128,14 @@ class MainWindow(BaseWindow):
 
     # TODO: 取引ボタン有効設定
     def enable_btn_trade(self, b_enable: bool):
-        self._window[self.__EVT_BTN_RUN_TRADE].update(disabled=not b_enable)
+        btn = self._window.find_element(self.__EVT_BTN_RUN_TRADE)
+        # self._window[self.__EVT_BTN_RUN_TRADE].update(disabled=not b_enable)
+        btn.update(disabled=not b_enable)
 
     # TODO: 戦略テーブルを更新
     def update_strategy_table(self, datas: list):
-        self._window[self.__KEY_STRATEGY_TABLE].update(values=datas)
+        table = self._window.find_element(self.__KEY_STRATEGY_TABLE)
+        table.update(values=datas)
 
     def __create_menubar(self) -> sg.Menu:
         return sg.Menu(
