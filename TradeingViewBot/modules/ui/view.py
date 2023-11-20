@@ -40,14 +40,19 @@ class ViewController(object):
 
         while True:
             try:
-                if self.__main_win.update(self.__event_interface) is False:
-                    break
+                win, event, values = sg.read_all_windows(timeout=1)
+                if self.__main_win.is_window(win):
+                    if event is None:
+                        break
+                    if self.__main_win.update(event, values, self.__event_interface) is False:
+                        break
 
                 # ループを逆順に回す事でループ中に要素を消している
                 for child_win in reversed(self.__child_win):
-                    if child_win.update(self.__event_interface) is False:
-                        child_win.close()
-                        self.__child_win.remove(child_win)
+                    if child_win.is_window(win):
+                        if child_win.update(event, values, self.__event_interface) is False:
+                            child_win.close()
+                            self.__child_win.remove(child_win)
 
                 self.__event_interface.event_update()
 

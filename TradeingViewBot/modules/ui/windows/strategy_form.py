@@ -41,14 +41,16 @@ class StrategyFormWindow(BaseWindow):
         # 表示する時は他のウィンドウは操作させない
         super().open(b_screen=b_screen, layout=[self.__layout], b_model=True)
 
-    def update(self, event_interface: IUIViewEvent) -> bool:
-        event, value = self._window.read(timeout=1)
+    def update(self, event, values, event_interface: IUIViewEvent) -> bool:
+        if event is None:
+            return False
+
         match event:
             case sg.WINDOW_CLOSE_ATTEMPTED_EVENT:
                 return False
             case self.__EVT_BTN_OK:
-                b_demo: bool = value[self.__EVT_DEMO_CHECK]
-                name: str = value[self.__EVT_INPUT_NAME]
+                b_demo: bool = values[self.__EVT_DEMO_CHECK]
+                name: str = values[self.__EVT_INPUT_NAME]
                 event_interface.even_add_strategy(name=name, b_demo=b_demo)
                 return False
 

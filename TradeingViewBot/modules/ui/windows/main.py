@@ -80,9 +80,7 @@ class MainWindow(BaseWindow):
         else:
             treeview.bind("<Button-3>", __update_event_st_table_click)
 
-    def update(self, event_interface: IUIViewEvent) -> bool:
-        event, value = self._window.read(timeout=1)
-
+    def update(self, event, values, event_interface: IUIViewEvent) -> bool:
         match event:
             case (sg.WIN_CLOSED, "Exit"):
                 return False

@@ -35,7 +35,7 @@ class BaseWindow(object):
         self._window.close()
         return True
 
-    def update(self, event_interface: IUIViewEvent) -> bool:
+    def update(self, event, values, event_interface: IUIViewEvent) -> bool:
         return True
 
     def is_window(self, window) -> bool:
