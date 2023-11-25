@@ -1,4 +1,5 @@
-from modules.rrss import controller, model
+from modules.broker.rrss import controller
+from modules.broker.rrss import model
 from pathlib import Path
 
 

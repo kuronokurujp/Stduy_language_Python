@@ -101,13 +101,13 @@ class MainWindow(BaseWindow):
                 pass
             case self.__KEY_STRATEGY_TRADE_BUY:
                 # TODO: 選択した戦略で手動買い注文
-                pass
+                event_interface.event_order_buy()
             case self.__KEY_STRATEGY_TRADE_SELL:
                 # TODO: 選択した戦略で手動売り注文
-                pass
+                event_interface.event_order_sell()
             case self.__KEY_STRATEGY_TRADE_ALL_CLOSE:
                 # TODO: 選択した戦略の全決済
-                pass
+                event_interface.event_all_close()
         if (
             isinstance(event, tuple)
             and len(event) == 3

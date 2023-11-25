@@ -44,13 +44,19 @@ class ViewController(object):
                 if self.__main_win.is_window(win):
                     if event is None:
                         break
-                    if self.__main_win.update(event, values, self.__event_interface) is False:
+                    if (
+                        self.__main_win.update(event, values, self.__event_interface)
+                        is False
+                    ):
                         break
 
                 # ループを逆順に回す事でループ中に要素を消している
                 for child_win in reversed(self.__child_win):
                     if child_win.is_window(win):
-                        if child_win.update(event, values, self.__event_interface) is False:
+                        if (
+                            child_win.update(event, values, self.__event_interface)
+                            is False
+                        ):
                             child_win.close()
                             self.__child_win.remove(child_win)
 
@@ -67,9 +73,9 @@ class ViewController(object):
     def close(self):
         self.__main_win.close()
 
-    def open_strategy_form(self):
+    def open_strategy_form(self, broker_names: list[str]):
         form_win: StrategyFormWindow = StrategyFormWindow(
-            "戦略設定", size=(300, 200), b_demo=True
+            "戦略設定", size=(300, 200), b_demo=True, broker_names=broker_names
         )
         form_win.open(b_screen=False)
         self.__child_win.append(form_win)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import uuid
+import modules.utility.random as utility_rnd
 
 
 # TODO: ストラテジーのデータオブジェクト
@@ -9,12 +9,13 @@ class DataObject(object):
     # 32bitにはならない？
     __name: str = ""
     __url: str = ""
-    __b_demo: bool = True
+    # TODO: 証券会社のタイプ値
+    __broker_type: int = -1
 
-    def __init__(self, name: str, b_demo: bool, url: str) -> None:
+    def __init__(self, name: str, broker_type: int, url: str) -> None:
         self.__name = name
         self.__url = url
-        self.__b_demo = b_demo
+        self.__broker_type = broker_type
 
     @property
     def name(self) -> str:
@@ -25,8 +26,8 @@ class DataObject(object):
         return self.__url
 
     @property
-    def demo(self) -> bool:
-        return self.__b_demo
+    def broker_type(self) -> int:
+        return self.__broker_type
 
 
 # TODO: ストラテジーのデータオブジェクト管理
@@ -39,18 +40,17 @@ class DataObjectManager(object):
         return self.__objects
 
     def __init__(self) -> None:
-        pass
+        super().__init__()
 
     # TODO: オブジェクトの追加
-    def add_object(self, name: str, url: str, b_demo: bool) -> tuple[bool, str, int]:
+    def add_object(self, name: str, broker_type: int) -> tuple[bool, str, int]:
         # TODO: 検証処理の追加が必要
 
         # ユニークなIDを作る
-        guid = uuid.uuid1()
-        id: int = int.from_bytes(guid.bytes, byteorder="big", signed=True) >> 64
-        # URLの後ろにユニークなIDをつけて一意なURLを作成
+        guid = utility_rnd.guid()
+        # URLは固定ではなく変化するのでURLの後ろにつける値を保存
         object: DataObject = DataObject(
-            name=name, url="{}/{}".format(url, guid), b_demo=b_demo
+            name=name, url="{}".format(guid), broker_type=broker_type
         )
 
         self.__objects[id] = object

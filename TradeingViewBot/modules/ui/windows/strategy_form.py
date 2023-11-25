@@ -10,7 +10,7 @@ class StrategyFormWindow(BaseWindow):
     __EVT_DEMO_CHECK: str = "EV_STRATEGY_DEMO_CHECK"
     __EVT_INPUT_NAME: str = "EV_STRATEGY_FORM_INPUT_NAME"
 
-    def __init__(self, title: str, size, b_demo: bool) -> None:
+    def __init__(self, title: str, size, b_demo: bool, broker_names: list[str]) -> None:
         super().__init__(title=title, size=size)
 
         self.__layout = [

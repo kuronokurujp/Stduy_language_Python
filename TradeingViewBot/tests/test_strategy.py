@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import modules.strategy.object
+import modules.broker.const
 
 
 def test_add_strategy():
@@ -8,7 +9,9 @@ def test_add_strategy():
     )
 
     for i in range(100):
-        b_flg, msg, id = data_manager.add_object(name="test", url="https://test.co.com", b_demo=True)
+        b_flg, msg, id = data_manager.add_object(
+            name="test", broker_type=modules.broker.const.BROKER_TYPE_DEMO
+        )
         print(msg)
         assert b_flg
 
@@ -19,7 +22,9 @@ def test_del_strategy():
     )
 
     for i in range(100):
-        b_flg, msg, id = data_manager.add_object(name="test", url="https://test.co.com", b_demo=True)
+        b_flg, msg, id = data_manager.add_object(
+            name="test", broker_type=modules.broker.const.BROKER_TYPE_DEMO
+        )
         print(msg)
         assert b_flg
 
