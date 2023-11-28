@@ -15,13 +15,30 @@ Sample Python List
 ## Pytnon のインストール
 
 -   win 版
-    1. vscode を開く
-    1. ctrl + `でターミナルを開いて移動する
-    1. 以下のコマンドを実行
-        > python
-    1. python が入っていないと MicrosoftStore が開いて python のダウンロード画面を出すのでダウンロードする
--   参考サイト
-    -   [Python+VSCode におすすめの拡張機能](https://qiita.com/momotar47279337/items/73157407ae824751afc4)
+    -   MicrosoftStore からインストールする方法
+        1. vscode を開く
+        1. ctrl + `でターミナルを開いて移動する
+        1. 以下のコマンドを実行
+            > python
+        1. python が入っていないと MicrosoftStore が開いて python のダウンロード画面を出すのでダウンロードする
+        -   参考サイト
+            -   [Python+VSCode におすすめの拡張機能](https://qiita.com/momotar47279337/items/73157407ae824751afc4)
+    -   pyenv をインストールする方法
+        1. windows 用のパッケージ管理ソフト「Chocolatey」を導入
+            - 以下のサイトを参考にしてインストールした
+            - [Chocolatey の導入方法](https://zenn.dev/kazuma_r5/articles/a6d2608446ebdf)
+        1. Chocolate を使って pyenv をインストール
+            - 以下のサイトの項目「pyenv インストール」を参考にしてインストールした
+            - [Windows に pyenv を導入する方法](https://progtext.net/programming/win-pyenv/)
+        1. pyenv がインストールか確認
+            - PowerShell を開いて以下のコマンドを実行
+                - pyenv --version
+                - 実行すると以下のメッセージがでる可能性がある
+                    - pyenv : このシステムではスクリプトの実行が無効になっているため...
+                - このメッセージは PowerShell のポリシー設定が原因なので以下のサイトを参考にして解決できた
+                    - [「このシステムではスクリプトの実行が無効になっているため～～～を読み込むことができません」の対処法【Windows】](https://nishikiout.hatenablog.com/entry/2023/03/08/012215)
+    - 参考サイト
+        - [pyenv 利用のまとめ](https://qiita.com/m3y/items/45c7be319e401b24fca8)
 
 ## venv などの仮想環境を動かすための準備
 
@@ -57,7 +74,20 @@ Sample Python List
 ## 仮想環境作成
 
 -   win 版
-    -   以下のコマンドで作成
+    - pyenvが入っている場合
+        - [参考にしたサイト](https://zenn.dev/sion_pn/articles/4418eeda7c62d0)
+        1. 利用するpythonをインストールする
+            - pyenv install xxx
+                - xxxにインストールしたいpythonのバージョンを指定
+                - インストールできるバージョンのリストは以下のコマンドで出力できる
+                    - pyenv install --list
+        1. プロジェクトディレクトリに移動
+        1. プロジェクトで利用するpythonのバージョンを設定
+            - pyenv local xxx
+        1. プロジェクトディレクトリに.python-versionファイルが作成しているかチェック
+        1. .python-versionファイルはgitにコミットしないように無視リストに追加
+
+    -   以下のコマンドで環境作成
         -   python -m venv venv
 
 ## 仮想環境有効
