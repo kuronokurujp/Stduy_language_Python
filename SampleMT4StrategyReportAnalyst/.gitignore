@@ -166,5 +166,8 @@ media
 input/
 output/
 
+# pyenvでインストールしたpythonバージョン
+.python-version
+
 # テスト用のデータ
 data/

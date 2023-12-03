@@ -1,4 +1,6 @@
 import mt4
+from pathlib import Path
+import json
 
 
 def test_open_html():
@@ -176,10 +178,17 @@ def test_file_filter():
 
 
 def test_output_final_data():
+    param_name_dict = None
+    param_jp_name_json_path: Path = Path("data/param_name.json")
+    if not param_jp_name_json_path is None:
+        if param_jp_name_json_path.exists():
+            with param_jp_name_json_path.open(encoding="utf-8") as f:
+                param_name_dict = json.load(f)
+
     path_data_list: list = [
         [
-            "D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output/20231024/M15",
-            "202310024_M15",
+            "C:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output/H4",
+            "20231202_H4",
             None,
         ],
     ]
@@ -199,8 +208,9 @@ def test_output_final_data():
 
         # 出力
         mt4.output_xlsx(
-            dir_fullpath="D:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output",
+            dir_fullpath="C:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output",
             filename=path_data[1],
             pair_model_list=pair_model_list,
             curreny_model_dict=dict,
+            param_name_dict=param_name_dict,
         )

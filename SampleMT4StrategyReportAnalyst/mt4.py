@@ -3,6 +3,27 @@ import statistics
 import bs4  # ライブラリbs4をインポートする
 import openpyxl
 
+def __change_name(src_name:str, change_name_dict: dict[str, str]):
+    if change_name_dict == None:
+        return src_name
+
+    if src_name in change_name_dict:
+        return change_name_dict[src_name]
+
+    return src_name
+
+def __change_param_name(src: str, param_name_dict: dict[str, str]):
+    if param_name_dict == None:
+        return src
+
+    conv_str: str = src
+
+    for k, v in param_name_dict.items():
+        conv_str = conv_str.replace(k, v)
+
+    return conv_str
+
+
 
 class BaseDataModel(object):
     def __init__(self) -> None:
@@ -66,8 +87,10 @@ class ParamPairModel(object):
             if len(items) == 2:
                 try:
                     name: str = items[0]
+                    # TODO: 日本語に変換
                     name = name.lstrip()
                     name = name.rstrip()
+
                     f: float = float(items[1])
                     self.params_dict[name] = f
                 except Exception as ex:
@@ -104,7 +127,6 @@ class ParamPairModel(object):
         return comment
 
     def get_avg_val(self, type_name: str) -> float:
-
         match type_name:
             case "prfoit_lost":
                 # 損益
@@ -144,7 +166,9 @@ def create_currency_name(filename_fullpath: str) -> str:
     return file_path.stem.split("_")[0]
 
 
-def create_model_list(currenty_name: str, soup: bs4.BeautifulStoneSoup) -> list[DataModel]:
+def create_model_list(
+    currenty_name: str, soup: bs4.BeautifulStoneSoup
+) -> list[DataModel]:
     element_table = soup.find_all("table")
 
     # print(element_table)
@@ -162,12 +186,17 @@ def create_model_list(currenty_name: str, soup: bs4.BeautifulStoneSoup) -> list[
         e_soup: bs4.BeautifulStoneSoup = bs4.BeautifulSoup(str(e), "html.parser")
         td_list: list = e_soup.find_all("td")
 
-        data_model_list.append(DataModel(curreny_name=currenty_name, html_list=td_list))
+        model = DataModel(curreny_name=currenty_name, html_list=td_list)
+        # 取引回数がない場合は検証失敗しているデータなので無視
+        if 0 < model.total_number_transactions:
+            data_model_list.append(model)
 
     return data_model_list
 
 
-def create_param_group_model_dict(model_dict: dict[str, list[DataModel]]) -> dict[str, list[DataModel]]:
+def create_param_group_model_dict(
+    model_dict: dict[str, list[DataModel]]
+) -> dict[str, list[DataModel]]:
     group_model_dict: dict[str, list[DataModel]] = dict()
 
     count: int = 0
@@ -190,12 +219,13 @@ def write_cell_float(sheet, cell_name: str, val: float):
     # 小数点以下を2桁まで表示
     sheet[cell_name].number_format = "0.00"
 
-def write_cell_ea_param(sheet, cell_name: str, model: ParamPairModel, param_name: str):
+
+def write_cell_ea_param(sheet, cell_name: str, model: ParamPairModel, param_name: str, jp_name_dict: dict[str, str] = None):
     from openpyxl.comments import Comment
 
     comment: Comment = None
     if param_name == "params":
-        sheet[cell_name] = model.params
+        sheet[cell_name] = __change_param_name(model.params, param_name_dict=jp_name_dict)
         # コメントがあれば追加する
         if model.get_comment_by_param() != "":
             comment = Comment(model.get_comment_by_param(), "Comment Author")
@@ -213,7 +243,13 @@ def write_cell_ea_param(sheet, cell_name: str, model: ParamPairModel, param_name
         sheet[cell_name].comment = comment
 
 
-def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPairModel], curreny_model_dict: dict[str, list[DataModel]]):
+def output_xlsx(
+    dir_fullpath: str,
+    filename: str,
+    pair_model_list: list[ParamPairModel],
+    curreny_model_dict: dict[str, list[DataModel]],
+    param_name_dict: dict[str, str] = None
+):
     file_path = Path(dir_fullpath) / "{}.xlsx".format(filename)
     file_path.unlink(True)
 
@@ -221,10 +257,10 @@ def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPai
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     # シート名は通貨のペア数を元に作る
-    sheet = wb.create_sheet("{}通貨".format(len(curreny_model_dict)), 0)
+    sheet = wb.create_sheet("概要", 0)
 
-    # TODO: 成績表を作る
-    curreny_result_header_dict: dict[str, str]= {
+    # 成績表を作る
+    curreny_result_header_dict: dict[str, str] = {
         "G": "通貨",
         "H": "利益を出したパターン数",
         "I": "損失を出したパターン数",
@@ -240,20 +276,51 @@ def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPai
         sheet["{}{}".format(key, 1)] = value
 
     from statistics import mean, median
+
     curreny_result_row: int = 2
     for key, model_list in curreny_model_dict.items():
         sheet["G" + str(curreny_result_row)] = key
-        sheet["H" + str(curreny_result_row)] = len(list(filter(lambda x: 1 < x.profit_factor, model_list)))
-        sheet["I" + str(curreny_result_row)] = len(list(filter(lambda x: x.profit_factor < 1, model_list)))
-        sheet["J" + str(curreny_result_row)] = len(list(filter(lambda x: x.profit_factor == 1.0, model_list)))
+        sheet["H" + str(curreny_result_row)] = len(
+            list(filter(lambda x: 1 < x.profit_factor, model_list))
+        )
+        sheet["I" + str(curreny_result_row)] = len(
+            list(filter(lambda x: x.profit_factor < 1, model_list))
+        )
+        sheet["J" + str(curreny_result_row)] = len(
+            list(filter(lambda x: x.profit_factor == 1.0, model_list))
+        )
 
         if 0 < len(model_list):
-            write_cell_float(sheet, "K" + str(curreny_result_row), median([x.prfoit_lost for x in model_list]))
-            write_cell_float(sheet, "L" + str(curreny_result_row), median([x.total_number_transactions for x in model_list]))
-            write_cell_float(sheet, "M" + str(curreny_result_row), median([x.profit_factor for x in model_list]))
-            write_cell_float(sheet, "N" + str(curreny_result_row), median([x.expected_gain for x in model_list]))
-            write_cell_float(sheet, "O" + str(curreny_result_row), median([x.drawdown_d for x in model_list]))
-            write_cell_float(sheet, "P" + str(curreny_result_row), median([x.drawdown_p for x in model_list]))
+            write_cell_float(
+                sheet,
+                "K" + str(curreny_result_row),
+                median([x.prfoit_lost for x in model_list]),
+            )
+            write_cell_float(
+                sheet,
+                "L" + str(curreny_result_row),
+                median([x.total_number_transactions for x in model_list]),
+            )
+            write_cell_float(
+                sheet,
+                "M" + str(curreny_result_row),
+                median([x.profit_factor for x in model_list]),
+            )
+            write_cell_float(
+                sheet,
+                "N" + str(curreny_result_row),
+                median([x.expected_gain for x in model_list]),
+            )
+            write_cell_float(
+                sheet,
+                "O" + str(curreny_result_row),
+                median([x.drawdown_d for x in model_list]),
+            )
+            write_cell_float(
+                sheet,
+                "P" + str(curreny_result_row),
+                median([x.drawdown_p for x in model_list]),
+            )
         else:
             sheet["F" + str(curreny_result_row)] = "データがない"
 
@@ -273,7 +340,7 @@ def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPai
     for k, v in param_dict.items():
         row_str: str = str(row)
         # パラメータ名
-        sheet["A" + row_str] = k
+        sheet["A" + row_str] = __change_name(k, change_name_dict=param_name_dict)
         # パラメータの最小
         sheet["B" + row_str] = min(v)
 
@@ -294,6 +361,25 @@ def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPai
 
         row = row + 1
 
+    # 全リストデータのシートを作成
+    sheet = wb.create_sheet("全リスト", 1)
+    write_sheet_test_data(row=row, sheet=sheet, pair_model_list=pair_model_list,param_name_dict=param_name_dict)
+
+    # 各通貨で共通しているパラメータの成績を別シートに記載
+    max_pair_count: int = len(curreny_model_dict)
+    for i in range(1, max_pair_count + 1):
+        sheet = wb.create_sheet("{}通貨".format(i), 1 + i)
+        # 共通しているパラメータの成績を抜き出してシートに書き込む
+        now_pair_molde_list = filter(
+            lambda x: x.get_currency_count() == i, pair_model_list
+        )
+        write_sheet_test_data(row=row, sheet=sheet, pair_model_list=now_pair_molde_list, param_name_dict=param_name_dict)
+
+    # 保存
+    wb.save(str(file_path))
+
+
+def write_sheet_test_data(row: int, sheet, pair_model_list: list[ParamPairModel], param_name_dict: dict[str, str]):
     param_result_header_list: list = [
         "NO",
         "通貨数",
@@ -343,21 +429,28 @@ def output_xlsx(dir_fullpath: str, filename: str, pair_model_list: list[ParamPai
             param_name="expected_gain",
         )
         write_cell_ea_param(
-            sheet=sheet, cell_name="G" + count_str, model=model_list, param_name="drawdown_d"
+            sheet=sheet,
+            cell_name="G" + count_str,
+            model=model_list,
+            param_name="drawdown_d",
         )
         write_cell_ea_param(
-            sheet=sheet, cell_name="H" + count_str, model=model_list, param_name="drawdown_p"
+            sheet=sheet,
+            cell_name="H" + count_str,
+            model=model_list,
+            param_name="drawdown_p",
         )
         write_cell_ea_param(
-            sheet=sheet, cell_name="I" + count_str, model=model_list, param_name="params"
+            sheet=sheet,
+            cell_name="I" + count_str,
+            model=model_list,
+            param_name="params",
+            jp_name_dict=param_name_dict
         )
 
         count = count + 1
     # オートフィルタ範囲の設定
     sheet.auto_filter.ref = "{}:{}".format("A{}".format(h_row), "I{}".format(count))
-
-    # 保存
-    wb.save(str(file_path))
 
 
 def get_target_file_list(dir_filenamt: str, ignore_currenty_names: list) -> list:
@@ -370,6 +463,7 @@ def get_target_file_list(dir_filenamt: str, ignore_currenty_names: list) -> list
     return [
         f for f in glob.glob(file_fullpath) if not Path(f).stem in ignore_currenty_names
     ]
+
 
 # 通貨データファイルから各通貨のデータモデルリストを通貨名をキーとした辞書として作成
 def create_currency_model_dict(path_filename_list: list) -> dict[str, list[DataModel]]:
@@ -385,16 +479,23 @@ def create_currency_model_dict(path_filename_list: list) -> dict[str, list[DataM
             currenty_model_dict[currenty_name] = list()
 
         # currenty_model_dict.extend(create_model_list(currenty_name=currenty_name, soup=soup))
-        currenty_model_dict[currenty_name] = create_model_list(currenty_name=currenty_name, soup=soup)
+        currenty_model_dict[currenty_name] = create_model_list(
+            currenty_name=currenty_name, soup=soup
+        )
         assert not currenty_model_dict[currenty_name] is None
         assert 0 < len(currenty_model_dict)
 
     return currenty_model_dict
 
+
 # 通貨毎のモデルデータリストからパラメータをペアとしたモデルリストをコンバート
-def conv_currenty_model_dict_to_param_pair_model_list(currenty_model_dict: dict[str, list[DataModel]]) -> list[ParamPairModel]:
+def conv_currenty_model_dict_to_param_pair_model_list(
+    currenty_model_dict: dict[str, list[DataModel]]
+) -> list[ParamPairModel]:
     # パラメータでまとめたモデル辞書作成
-    param_group_model_dict: dict[list[DataModel]] = create_param_group_model_dict(model_dict=currenty_model_dict)
+    param_group_model_dict: dict[list[DataModel]] = create_param_group_model_dict(
+        model_dict=currenty_model_dict
+    )
     assert not param_group_model_dict is None
     assert 0 < len(param_group_model_dict)
 
