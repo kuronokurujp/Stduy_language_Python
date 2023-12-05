@@ -3,7 +3,8 @@ import statistics
 import bs4  # ライブラリbs4をインポートする
 import openpyxl
 
-def __change_name(src_name:str, change_name_dict: dict[str, str]):
+
+def __change_name(src_name: str, change_name_dict: dict[str, str]):
     if change_name_dict == None:
         return src_name
 
@@ -11,6 +12,7 @@ def __change_name(src_name:str, change_name_dict: dict[str, str]):
         return change_name_dict[src_name]
 
     return src_name
+
 
 def __change_param_name(src: str, param_name_dict: dict[str, str]):
     if param_name_dict == None:
@@ -22,7 +24,6 @@ def __change_param_name(src: str, param_name_dict: dict[str, str]):
         conv_str = conv_str.replace(k, v)
 
     return conv_str
-
 
 
 class BaseDataModel(object):
@@ -87,7 +88,6 @@ class ParamPairModel(object):
             if len(items) == 2:
                 try:
                     name: str = items[0]
-                    # TODO: 日本語に変換
                     name = name.lstrip()
                     name = name.rstrip()
 
@@ -104,6 +104,12 @@ class ParamPairModel(object):
 
     def get_currency_count(self) -> int:
         return len(self.model_list)
+
+    def get_pair_curreny_name(self):
+        comment: str = ""
+        for model in self.model_list:
+            comment = comment + "{},".format(model.curreny_name)
+        return comment
 
     def get_comment(self, type_name: str) -> str:
         comment: str = ""
@@ -220,12 +226,20 @@ def write_cell_float(sheet, cell_name: str, val: float):
     sheet[cell_name].number_format = "0.00"
 
 
-def write_cell_ea_param(sheet, cell_name: str, model: ParamPairModel, param_name: str, jp_name_dict: dict[str, str] = None):
+def write_cell_ea_param(
+    sheet,
+    cell_name: str,
+    model: ParamPairModel,
+    param_name: str,
+    jp_name_dict: dict[str, str] = None,
+):
     from openpyxl.comments import Comment
 
     comment: Comment = None
     if param_name == "params":
-        sheet[cell_name] = __change_param_name(model.params, param_name_dict=jp_name_dict)
+        sheet[cell_name] = __change_param_name(
+            model.params, param_name_dict=jp_name_dict
+        )
         # コメントがあれば追加する
         if model.get_comment_by_param() != "":
             comment = Comment(model.get_comment_by_param(), "Comment Author")
@@ -248,7 +262,7 @@ def output_xlsx(
     filename: str,
     pair_model_list: list[ParamPairModel],
     curreny_model_dict: dict[str, list[DataModel]],
-    param_name_dict: dict[str, str] = None
+    param_name_dict: dict[str, str] = None,
 ):
     file_path = Path(dir_fullpath) / "{}.xlsx".format(filename)
     file_path.unlink(True)
@@ -363,7 +377,12 @@ def output_xlsx(
 
     # 全リストデータのシートを作成
     sheet = wb.create_sheet("全リスト", 1)
-    write_sheet_test_data(row=row, sheet=sheet, pair_model_list=pair_model_list,param_name_dict=param_name_dict)
+    write_sheet_test_data(
+        row=row,
+        sheet=sheet,
+        pair_model_list=pair_model_list,
+        param_name_dict=param_name_dict,
+    )
 
     # 各通貨で共通しているパラメータの成績を別シートに記載
     max_pair_count: int = len(curreny_model_dict)
@@ -373,13 +392,23 @@ def output_xlsx(
         now_pair_molde_list = filter(
             lambda x: x.get_currency_count() == i, pair_model_list
         )
-        write_sheet_test_data(row=row, sheet=sheet, pair_model_list=now_pair_molde_list, param_name_dict=param_name_dict)
+        write_sheet_test_data(
+            row=row,
+            sheet=sheet,
+            pair_model_list=now_pair_molde_list,
+            param_name_dict=param_name_dict,
+        )
 
     # 保存
     wb.save(str(file_path))
 
 
-def write_sheet_test_data(row: int, sheet, pair_model_list: list[ParamPairModel], param_name_dict: dict[str, str]):
+def write_sheet_test_data(
+    row: int,
+    sheet,
+    pair_model_list: list[ParamPairModel],
+    param_name_dict: dict[str, str],
+):
     param_result_header_list: list = [
         "NO",
         "通貨数",
@@ -399,8 +428,37 @@ def write_sheet_test_data(row: int, sheet, pair_model_list: list[ParamPairModel]
         name_col = name_col + 1
     row = row + 1
 
+    # 損益を降順で並べ替え
+    new_pair_model_list: list[ParamPairModel] = sorted(
+        pair_model_list,
+        key=lambda model: model.get_avg_val("prfoit_lost"),
+        reverse=True,
+    )
+    # データ数が１万を超えた場合はデータ整理する
+    # データ数を1万までに抑える
+    if 10000 <= len(new_pair_model_list):
+        chk_pair_model_list: list[ParamPairModel] = list[ParamPairModel]()
+        chk_pair_model_list.append(new_pair_model_list[0])
+
+        duplicate_count: int = 0
+        for i in range(1, 10000 - 1):
+            prev_currency_type_name: str = new_pair_model_list[i - 1].get_pair_curreny_name()
+            now_currency_type_name: str = new_pair_model_list[i].get_pair_curreny_name()
+
+            # 同じ通貨が連続している場合は10個までは出力する
+            # 同じ通貨が100とか1000とか連続しているデータは意味がないから
+            if prev_currency_type_name == now_currency_type_name:
+                if duplicate_count <= 10:
+                    duplicate_count = duplicate_count + 1
+                    chk_pair_model_list.append(new_pair_model_list[i])
+            else:
+                chk_pair_model_list.append(new_pair_model_list[i])
+                duplicate_count = 0
+
+        new_pair_model_list = chk_pair_model_list
+
     count: int = row
-    for model_list in pair_model_list:
+    for model_list in new_pair_model_list:
         count_str = str(count)
         sheet["A" + count_str] = str(count - 1)
         sheet["B" + count_str] = model_list.get_currency_count()
@@ -445,7 +503,7 @@ def write_sheet_test_data(row: int, sheet, pair_model_list: list[ParamPairModel]
             cell_name="I" + count_str,
             model=model_list,
             param_name="params",
-            jp_name_dict=param_name_dict
+            jp_name_dict=param_name_dict,
         )
 
         count = count + 1
