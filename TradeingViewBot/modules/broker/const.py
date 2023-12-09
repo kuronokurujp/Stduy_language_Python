@@ -19,7 +19,4 @@ CMD_ORDER_BUY = 0
 CMD_ORDER_SELL = 1
 
 # 注文コマンド名
-CMD_ORDER_TYPE_MAP: dict[int,str] = {
-    CMD_ORDER_BUY: "買",
-    CMD_ORDER_SELL: "売"
-}
+CMD_ORDER_TYPE_MAP: dict[int, str] = {CMD_ORDER_BUY: "買", CMD_ORDER_SELL: "売"}

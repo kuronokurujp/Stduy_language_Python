@@ -30,8 +30,6 @@ class ViewController(object):
         self.__model = model
         self.__event_interface = event_i
 
-        t = self.__model.title
-
         self.__main_win = MainWindow(title=self.__model.title, size=self.__model.size)
         sg.theme("Dark")
 

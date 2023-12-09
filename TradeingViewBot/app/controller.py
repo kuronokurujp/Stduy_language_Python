@@ -132,7 +132,7 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
         self, name: str, broker_name: str, symbole_type: int, lot: float
     ) -> bool:
         # TODO: 指定証券会社名がなければ失敗
-        if not broker_name in bk_const.BROKER_TYPE_MAP.values():
+        if broker_name not in bk_const.BROKER_TYPE_MAP.values():
             raise Exception("証券会社の選択に失敗({})".format(broker_name))
             return False
 
