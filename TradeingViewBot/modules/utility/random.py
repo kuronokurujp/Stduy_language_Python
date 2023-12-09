@@ -8,4 +8,4 @@ def random_num() -> int:
 
 # GUIDを取得
 def guid() -> str:
-    return guid
+    return str(uuid.uuid1())

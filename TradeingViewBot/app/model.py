@@ -13,8 +13,35 @@ from pathlib import Path
 
 # TODO: モデル設定のクラス
 class ModelConfig(object):
-    ngrok_config_path: Path = None
-    rrss_config_tomlfile_path: Path = None
+    __ngrok_config_path: Path = None
+    __rrss_config_tomlfile_path: Path = None
+
+    @property
+    def ngrok_config_path(self) -> Path:
+        return self.__ngrok_config_path
+
+    @property
+    def rrss_config_tomlfile_path(self) -> Path:
+        return self.__rrss_config_tomlfile_path
+
+    def __init__(
+        self, ngrok_config_path: Path = None, rrss_config_tomlfile_path: Path = None
+    ) -> None:
+        self.__ngrok_config_path = ngrok_config_path
+        self.__rrss_config_tomlfile_path = rrss_config_tomlfile_path
+
+    # TODO: Ngrokのコンフィグが存在するか
+    def exists_ngrok_config(self) -> bool:
+        return (
+            self.__ngrok_config_path is not None and self.__ngrok_config_path.exists()
+        )
+
+    # TODO: 楽天RSSのコンフィグが存在するか
+    def exists_rrss_config(self) -> bool:
+        return (
+            self.__rrss_config_tomlfile_path is not None
+            and self.__rrss_config_tomlfile_path.exists()
+        )
 
 
 class Model(object):
@@ -24,13 +51,7 @@ class Model(object):
     __strategy_data_manager: modules.strategy.object.DataObjectManager = (
         modules.strategy.object.DataObjectManager()
     )
-
-    # TODO: 証券会社を設定しないとだめ
-    __default_broker_type: int = modules.broker.const.BROKER_TYPE_DEMO
-
-    @property
-    def broker_type(self) -> int:
-        return self.__default_broker_type
+    __b_debug: bool = False
 
     @property
     def ui_model(self) -> modules.ui.model.Model:
@@ -40,10 +61,11 @@ class Model(object):
     def ngrok_model(self) -> modules.ngrok.model.Model:
         return self.__ngrok_model
 
-    def __init__(self, config: ModelConfig) -> None:
-        self.__ui_model = modules.ui.model.Model()
+    def __init__(self, config: ModelConfig, b_debug: bool = False) -> None:
+        self.__b_debug = b_debug
+        self.__ui_model = modules.ui.model.Model(b_debug=self.__b_debug)
 
-        if config.ngrok_config_path is not None and config.ngrok_config_path.exists():
+        if config.exists_ngrok_config():
             self.__ngrok_model = modules.ngrok.model.Model(
                 config_tomlfile_path=config.ngrok_config_path
             )
@@ -52,25 +74,32 @@ class Model(object):
         self.__broker_models[
             modules.broker.const.BROKER_TYPE_DEMO
         ] = modules.broker.demo.model.Model()
-        self.__broker_models[
-            modules.broker.const.BROKER_TYPE_RAKUTEN_RSS
-        ] = modules.broker.rrss.model.Model(
-            config_tomlfile_path=config.rrss_config_tomlfile_path
-        )
+        # TODO: 楽天RSSの設定があれば専用モデルを作成
+        if config.exists_rrss_config():
+            self.__broker_models[
+                modules.broker.const.BROKER_TYPE_RAKUTEN_RSS
+            ] = modules.broker.rrss.model.Model(
+                config_tomlfile_path=config.rrss_config_tomlfile_path
+            )
 
     # TODO: 戦略の追加
-    def add_strategy(self, name: str, broker_type: int) -> tuple[bool, str, int]:
+    def add_strategy(
+        self, name: str, broker_type: int, symbole_type: int, lot: float
+    ) -> tuple[bool, str, int, int]:
         return self.__strategy_data_manager.add_object(
-            name=name, broker_type=broker_type
+            name=name, broker_type=broker_type, symbol_type=symbole_type, lot=lot
         )
 
     # TODO: 戦略の削除
-    def del_strategy(self, id: int) -> tuple[bool, str]:
-        return self.__strategy_data_manager.del_object(id=id)
+    def del_strategy_at(self, idx: int) -> tuple[bool, str]:
+        return self.__strategy_data_manager.del_object(id=idx)
 
     # TODO: 戦略の取得
-    def get_strategy(self, id: int) -> modules.strategy.object.DataObject:
-        return self.__strategy_data_manager.objects[id]
+    def get_strategy_at(self, idx: int) -> modules.strategy.object.DataObject:
+        return self.__strategy_data_manager.get_object_at(idx=idx)
 
+    # TODO: 証券会社のモデルを取得
     def get_broker_model(self, broker_type: int) -> modules.broker.model.BaseModel:
-        return self.__broker_models[broker_type]
+        if broker_type in self.__broker_models:
+            return self.__broker_models[broker_type]
+        return None

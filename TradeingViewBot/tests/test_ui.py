@@ -28,7 +28,8 @@ class DummyNgrokController(modules.ngrok.interface.INgrokController):
 
 
 def test_ui_open():
-    app_model = app.model.Model(ngrok_config_path=None)
+    model_config: app.model.ModelConfig = app.model.ModelConfig()
+    app_model = app.model.Model(config=model_config, b_debug=True)
     app_ctrl = app.controller.Controller(
         model=app_model, logger=modules.log.logger.PrintLogger()
     )
@@ -63,7 +64,8 @@ class TestUICtrl02(app.controller.Controller):
 
 
 def test_ui_btn_run_trade_enable():
-    app_model = app.model.Model(ngrok_config_path=None)
+    model_config: app.model.ModelConfig = app.model.ModelConfig()
+    app_model = app.model.Model(config=model_config, b_debug=True)
     app_ctrl = TestUICtrl02(model=app_model, logger=modules.log.logger.PrintLogger())
     app_ctrl.open()
 

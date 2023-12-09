@@ -3,6 +3,8 @@ import PySimpleGUI as sg
 from modules.ui.windows.base import BaseWindow
 from modules.ui.interface import IUIViewEvent
 
+import modules.ui.interface as ui_interface
+
 
 # メインウィンドウクラス
 class MainWindow(BaseWindow):
@@ -101,10 +103,28 @@ class MainWindow(BaseWindow):
                 pass
             case self.__KEY_STRATEGY_TRADE_BUY:
                 # TODO: 選択した戦略で手動買い注文
-                event_interface.event_order_buy()
+                st_table: sg.Table = self._window[self.__KEY_STRATEGY_TABLE]
+                if 0 < len(st_table.SelectedRows):
+                    # TODO: データを取得
+                    st_idx: int = st_table.SelectedRows[0]
+                    event_interface.event_simple_order(
+                        st_idx=st_idx, cmd=ui_interface.ORDER_BUY
+                    )
+                else:
+                    # TODO: 選択していない状態ではエラーなので表示する
+                    pass
             case self.__KEY_STRATEGY_TRADE_SELL:
                 # TODO: 選択した戦略で手動売り注文
-                event_interface.event_order_sell()
+                st_table: sg.Table = self._window[self.__KEY_STRATEGY_TABLE]
+                if 0 < len(st_table.SelectedRows):
+                    st_idx: int = st_table.SelectedRows[0]
+                    event_interface.event_simple_order(
+                        st_idx=st_idx, cmd=ui_interface.ORDER_SELL
+                    )
+                else:
+                    # TODO: 選択していない状態ではエラーなので表示する
+                    pass
+
             case self.__KEY_STRATEGY_TRADE_ALL_CLOSE:
                 # TODO: 選択した戦略の全決済
                 event_interface.event_all_close()
@@ -133,9 +153,13 @@ class MainWindow(BaseWindow):
         btn.update(disabled=not b_enable)
 
     # TODO: 戦略テーブルを更新
-    def update_strategy_table(self, datas: list):
+    def update_strategy_table(self, items: list):
         table = self._window.find_element(self.__KEY_STRATEGY_TABLE)
-        table.update(values=datas)
+        table.update(values=items)
+
+    def update_transaction_table(self, items: list):
+        table = self._window.find_element(self.__KEY_TRANSACTION_TABLE)
+        table.update(values=items)
 
     def __create_menubar(self) -> sg.Menu:
         return sg.Menu(
@@ -209,8 +233,8 @@ class MainWindow(BaseWindow):
         # 列名が同じだと横のレイアウトサイズが壊れた
         # TODO: テーブルのヘッダーなど各列を要素にしてリストにまとめることはできないかな
         # 以下のやり方だと列追加でバグが起きやすい
-        headers: list = ["ID", "取引", "戦略", "WebhookURL"]
-        visible_columns: list[bool] = [False, True, True, False]
+        headers: list = ["ID", "取引", "戦略", "取引数量"]
+        visible_columns: list[bool] = [False, True, True, True]
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
 
         return (
@@ -254,7 +278,18 @@ class MainWindow(BaseWindow):
     def __craete_transactions_layout(self):
         # 列名が同じだと横のレイアウトサイズが壊れた
         # TODO: 列名とデータキー名のマッピング作る
-        headers: list = ["注文番号", "時間", "証券会社", "取引種別", "数量", "銘柄", "価格"]
+        headers: list = [
+            "注文番号",
+            "時間",
+            "戦略",
+            "証券会社",
+            "銘柄",
+            "取引種別",
+            "価格",
+            "数量",
+            "損切価格",
+            "決済価格",
+        ]
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
 
         return (

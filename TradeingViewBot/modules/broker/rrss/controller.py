@@ -3,6 +3,7 @@ import modules.excel.controller
 import modules.broker.controler
 import modules.broker.rrss.model
 from modules.log.logger import AppLogger
+
 import asyncio
 
 
@@ -11,10 +12,13 @@ class Controller(
     modules.broker.controler.BaseController, modules.excel.controller.Controller
 ):
     def __init__(
-        self, model: modules.broker.rrss.model.Model, logger: AppLogger = None
+        self,
+        model: modules.broker.rrss.model.Model,
+        callback: modules.broker.controler.ICallbackControler,
+        logger: AppLogger = None,
     ) -> None:
         modules.broker.controler.BaseController.__init__(
-            self=self, model=model, logger=logger
+            self=self, model=model, callback=callback
         )
         modules.excel.controller.Controller.__init__(
             self=self, model=model, logger=logger

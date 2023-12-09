@@ -172,4 +172,7 @@ data/config/excel.toml
 # 非公開ツール
 tools/ngrok/*
 
+# pyenvのローカルpythonバージョン情報
+.python-version
+
 Memo.txt

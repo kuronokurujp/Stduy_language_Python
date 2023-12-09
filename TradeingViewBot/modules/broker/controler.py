@@ -1,38 +1,44 @@
 #!/usr/bin/env python
 import modules.log.interface
+from abc import ABC, abstractmethod
 from modules.broker.model import BaseModel
 from modules.broker.event import (
     IOrderSendEvent,
     IAllCloseSendEvent,
     ICloseSendEvent,
-    BaseOrderSendEventResult,
+    OrderSendEventResult,
     ICloseSendEventResult,
     IAllCloseSendEventResult,
 )
 import asyncio
 
 
+# TODO: 制御イベントのコールバッククラス
+class ICallbackControler(ABC):
+    # 注文結果キャッチ
+    @abstractmethod
+    def on_result_ordersend(self, result: OrderSendEventResult):
+        pass
+
+
+# TODO: 証券会社制御の基本クラス
 class BaseController(object):
     __model: BaseModel = None
-    __log: modules.log.interface.ILoegger = None
+    __callback: ICallbackControler = None
 
-    def __init__(
-        self, model: BaseModel, logger: modules.log.interface.ILoegger
-    ) -> None:
+    def __init__(self, model: BaseModel, callback: ICallbackControler) -> None:
         self.__model = model
-        self.__log = logger
+        self.__callback = callback
 
     # TODO: 新規取引イベント
     def event_ordersend(self, event: IOrderSendEvent):
-        result: BaseOrderSendEventResult = asyncio.run(self.__async_ordersend(event))
+        result: OrderSendEventResult = asyncio.run(self.__async_ordersend(event))
         # TODO: エラーがないか
-        if result.is_error():
-            self.__log.err(result.err_msg())
+        if result.is_error:
+            pass
         else:
-            # TODO: 取引成功
-            self.__log.info(result.ok_msg())
-            # TODO: 取引成功したオーダー情報を管理するのでリストに設定
-            self.__model.add_orderevent_result(result)
+            pass
+        self.__callback.on_result_ordersend(result=result)
 
     # TODO: 決済取引イベント
     def event_orderclose(self, event: ICloseSendEvent):
@@ -43,7 +49,9 @@ class BaseController(object):
         pass
 
     # TODO: 新規取引の非同期処理
-    async def __async_ordersend(self, event: IOrderSendEvent) -> BaseOrderSendEventResult:
+    async def __async_ordersend(
+        self, event: IOrderSendEvent
+    ) -> OrderSendEventResult:
         count: int = 0
         # TODO: 注文処理をする
         task = event.run()
@@ -59,4 +67,4 @@ class BaseController(object):
             if self.__model.__retry_count < +count:
                 break
 
-        return event.result()
+        return event.result

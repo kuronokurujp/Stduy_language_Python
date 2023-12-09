@@ -1,49 +1,50 @@
 #!/usr/bin/env python
-import modules.ui.view
-import modules.ui.interface
+import traceback
+import modules.ui.view as ui_view
+import modules.ui.interface as ui_interface
 
-import modules.log.interface
+import modules.log.interface as log_interface
 
-import modules.ngrok.controller
-import modules.ngrok.interface
-import modules.ngrok.model
+import modules.ngrok.controller as ng_ctrl
+import modules.ngrok.interface as ng_interface
+import modules.ngrok.model as ng_model
+import modules.strategy.object as st_obj
 
-import modules.strategy.object
-
-import modules.broker.const
-import modules.broker.controler
-import modules.broker.demo.controller
-import modules.broker.rrss.controller
+import modules.broker.const as bk_const
+import modules.broker.model as bk_model
+import modules.broker.controler as bk_ctrl
+import modules.broker.demo.controller as bk_demo_ctrl
+import modules.broker.demo.event as bk_demo_event
+import modules.broker.rrss.controller as bk_rrss_ctrl
 
 import datetime
 import app.model
 
 
 # TODO: アプリ制御
-class Controller(modules.ui.interface.IUIViewEvent):
-    __view_ctrl: modules.ui.view.ViewController = None
+class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
+    __view_ctrl: ui_view.ViewController = None
     __model: app.model.Model = None
-    __logger: modules.log.interface.ILoegger = None
+    __logger: log_interface.ILoegger = None
 
     # TODO: ngrok関連
-    __ngrok_ctrl: modules.ngrok.controller.Controller = None
-    __broker_ctrls: dict[int, modules.broker.controler.BaseController] = dict()
+    __ngrok_ctrl: ng_ctrl.Controller = None
+    __broker_ctrls: dict[int, bk_ctrl.BaseController] = dict()
 
     __b_run_trade: bool = False
 
     @property
-    def view(self) -> modules.ui.view.ViewController:
+    def view(self) -> ui_view.ViewController:
         return self.__view_ctrl
 
     def __init__(
-        self, model: app.model.Model, logger: modules.log.interface.ILoegger = None
+        self, model: app.model.Model, logger: log_interface.ILoegger = None
     ) -> None:
         self.__model = model
 
         self.__ngrok_ctrl = self._create_ngrok_ctrl(self.__model.ngrok_model)
-        self.__view_ctrl = modules.ui.view.ViewController(
-            title=self.__model.ui_model.title,
-            size=self.__model.ui_model.size,
+        self.__view_ctrl = ui_view.ViewController(
+            model=self.__model.ui_model,
             event_i=self,
         )
         self.__logger = logger
@@ -52,25 +53,25 @@ class Controller(modules.ui.interface.IUIViewEvent):
         self.__logger.clearnup()
 
         # TODO: 証券口座の制御を作成
-        self.__broker_ctrls[
-            modules.broker.const.BROKER_TYPE_DEMO
-        ] = modules.broker.demo.controller.Controller(
-            model=self.__model.get_broker_model(modules.broker.const.BROKER_TYPE_DEMO),
-            logger=logger,
-        )
-        self.__broker_ctrls[
-            modules.broker.const.BROKER_TYPE_RAKUTEN_RSS
-        ] = modules.broker.rrss.controller.Controller(
-            model=self.__model.get_broker_model[
-                modules.broker.const.BROKER_TYPE_RAKUTEN_RSS
-            ],
-            logger=logger,
+        self.__broker_ctrls[bk_const.BROKER_TYPE_DEMO] = bk_demo_ctrl.Controller(
+            model=self.__model.get_broker_model(bk_const.BROKER_TYPE_DEMO),
+            callback=self,
         )
 
+        rrss_model = self.__model.get_broker_model(bk_const.BROKER_TYPE_RAKUTEN_RSS)
+        if rrss_model is not None:
+            self.__broker_ctrls[
+                bk_const.BROKER_TYPE_RAKUTEN_RSS
+            ] = bk_rrss_ctrl.Controller(
+                model=rrss_model,
+                callback=self,
+                logger=logger,
+            )
+
     def _create_ngrok_ctrl(
-        self, model: modules.ngrok.model.Model
-    ) -> modules.ngrok.interface.INgrokController:
-        return modules.ngrok.controller.Controller(model=model)
+        self, model: ng_model.Model
+    ) -> ng_interface.INgrokController:
+        return ng_ctrl.Controller(model=model)
 
     def open(self):
         # 初期表示は画面サイズをフルに
@@ -114,7 +115,7 @@ class Controller(modules.ui.interface.IUIViewEvent):
         # 戦略追加のウィンドウが必要
         # メインウィンドウの入力はだめ
         self.__view_ctrl.open_strategy_form(
-            broker_names=modules.broker.const.BROKER_TYPE_NAMES
+            broker_names=list(bk_const.BROKER_TYPE_MAP.values())
         )
 
     # TODO: 戦略を更新
@@ -123,101 +124,151 @@ class Controller(modules.ui.interface.IUIViewEvent):
         # メインウィンドウの入力はだめ
         # すでに設定しているパラメータを設定
         self.__view_ctrl.open_strategy_form(
-            broker_names=modules.broker.const.BROKER_TYPE_NAMES
+            list(broker_names=bk_const.BROKER_TYPE_MAP.values())
         )
 
     # TODO: 戦略を追加
-    def even_add_strategy(self, name: str, b_demo: bool):
-        # TODO: デモフラグが立っているなら設定した証券会社ではなくデモ用の戦略にする
-        broker_type: int = self.__model.broker_type
-        if b_demo:
-            broker_type = modules.broker.const.BROKER_TYPE_DEMO
+    def event_add_strategy(
+        self, name: str, broker_name: str, symbole_type: int, lot: float
+    ) -> bool:
+        # TODO: 指定証券会社名がなければ失敗
+        if not broker_name in bk_const.BROKER_TYPE_MAP.values():
+            raise Exception("証券会社の選択に失敗({})".format(broker_name))
+            return False
 
-        b_flg, msg, id = self.__model.add_strategy(name=name, broker_type=broker_type)
+        broker_type: int = [
+            k for k, v in bk_const.BROKER_TYPE_MAP.items() if v == broker_name
+        ][0]
+        b_flg, msg, id, idx = self.__model.add_strategy(
+            name=name, broker_type=broker_type, symbole_type=symbole_type, lot=lot
+        )
         if b_flg:
-            # self.__logger.info(msg)
             # TODO: 戦略テーブルに追加
-            object: modules.strategy.object.DataObject = self.__model.get_strategy(id)
+            object: st_obj.DataObject = self.__model.get_strategy_at(idx)
             self.__view_ctrl.add_item_strategy(
                 id=id,
-                b_demo=broker_type == modules.broker.const.BROKER_TYPE_DEMO,
+                b_demo=broker_type == bk_const.BROKER_TYPE_DEMO,
                 name=object.name,
-                url=object.url,
+                lot=object.lot,
             )
         else:
             self.__logger.err(msg)
 
-    def event_order_buy(
+    # TODO: 新規注文
+    def event_order(
         self,
-        broker: int,
-        symbol: str,
+        st_obj: st_obj.DataObject,
         cmd: int,
-        volume: float,
-        price: float,
-        slippage: int,
-        stoploss: float,
-        takeprofit: float,
+        magic: int,
+        lot: float,
+        price: float = -1,
+        slippage: int = -1,
+        stoploss: float = -1,
+        takeprofit: float = -1,
+        volume: float = 1,
         comment: str = None,
-        magic: int = 0,
-        aExpiration: datetime.datetime = 0,
+        aExpiration: datetime.datetime = -1,
         aSpread: float = -1,
     ):
-        pass
+        # TODO: 注文のイベント作成して対応ブローカーに投げる
+        order_event: bk_ctrl.IOrderSendEvent = None
 
-    def event_order_sell(
-        self,
-        broker: int,
-        symbol: str,
-        cmd: int,
-        volume: float,
-        price: float,
-        slippage: int,
-        stoploss: float,
-        takeprofit: float,
-        comment: str = None,
-        magic: int = 0,
-        aExpiration: datetime.datetime = 0,
-        aSpread: float = -1,
-    ):
+        broker_name: str = bk_const.BROKER_TYPE_MAP[st_obj.broker_type]
+        match (st_obj.broker_type):
+            case bk_const.BROKER_TYPE_DEMO:
+                order_event = bk_demo_event.OrderSendEvent(
+                    symbol=st_obj.symbole_type,
+                    # 戦略名
+                    strategy=st_obj.name,
+                    # 証券会社
+                    broker=broker_name,
+                    cmd=cmd,
+                    volume=volume,
+                    price=price,
+                    slippage=slippage,
+                    stoploss=stoploss,
+                    takeprofit=takeprofit,
+                    lot=lot,
+                    comment=comment,
+                    magic=magic,
+                    expiration=aExpiration,
+                    spread=aSpread,
+                )
+
+        # TODO: 取引実行する
+        # TODO: 取引結果を受け取るイベントが必要
+        self.__broker_ctrls[st_obj.broker_type].event_ordersend(order_event)
+
+    # TODO: 戦略データidx指定での新規注文
+    def event_simple_order(self, st_idx: int, cmd: int):
+        current_st_obj: st_obj.DataObject = self.__model.get_strategy_at(idx=st_idx)
+        # TODO: 失敗
+        if current_st_obj is None:
+            # TODO: エラー
+            raise Exception("存在しない戦略データを指定({})".format(st_idx))
+
+        # UIのコマンドから証券会社のコマンドに変える
+        cmd_order: int = bk_const.CMD_ORDER_BUY
+        if cmd == ui_interface.ORDER_BUY:
+            cmd_order = bk_const.CMD_ORDER_BUY
+        elif cmd == ui_interface.ORDER_SELL:
+            cmd_order = bk_const.CMD_ORDER_SELL
+        else:
+            # TODO: エラー
+            raise Exception("売買タイプが間違っている({})".format(cmd))
+
+        # TODO: 銘柄に応じた現在の最新価格を取得
+        volume: float = 0
+
+        self.event_order(
+            current_st_obj,
+            cmd=cmd_order,
+            magic=st_idx,
+            lot=current_st_obj.lot,
+            volume=0,
+        )
+
+    def event_all_close(self):
         pass
 
     # TODO: エラー
-    def event_error(self, ex: Exception):
-        self.__logger.err(ex)
+    def event_error(self, type, value, trace):
+        # TODO: デバッグ時は詳細表示する？
+        self.__logger.err(
+            "例外:{}が起きた.\n 例外は{}.\n 起きた箇所は\n{}".format(
+                type, value, traceback.format_tb(trace)
+            )
+        )
 
-    # TODO: 新規取引実行
-    # symbol            通貨ペア
-    # cmd               注文種別
-    # volume            ロット数
-    # price             仕掛け価格
-    # slippage          スリッページ（ポイント）
-    # stoploss          損切り価格
-    # takeprofit        利食い価格
-    # comment           コメント
-    # magic             マジックナンバー
-    # expiration        待機注文の有効期限
-    # spread            許容スプレッド
-    def __ordersend(
-        self,
-        broker: str,
-        symbol: str,
-        cmd: int,
-        volume: float,
-        price: float,
-        slippage: int,
-        stoploss: float,
-        takeprofit: float,
-        comment: str = None,
-        magic: int = 0,
-        aExpiration: datetime.datetime = 0,
-        aSpread: float = -1,
-    ):
-        match broker:
-            case "":
-                pass
-
-    # TODO: 決済取引実行
-    def __orderclose(self, ticket: int, lots: float, price: float, slippage: int):
-        pass
-
-    # TODO: 全決済取引実行
+    # TODO: 注文結果キャッチ
+    def on_result_ordersend(self, result: bk_ctrl.OrderSendEventResult):
+        if result.is_error:
+            # 注文失敗
+            self.__logger.err(result.err_msg)
+            # TODO: アラートを出すのがいいか？
+        else:
+            # 注文成功
+            self.__logger.info(result.ok_msg)
+            # TODO: 取引項目を追加
+            self.__view_ctrl.add_transaction_item(
+                # 注文番号
+                ticket=result.ticket,
+                # 注文時間
+                date_time=result.date_time,
+                # 戦略名
+                strategy=result.strategy,
+                # 証券会社
+                broker=result.broker,
+                # 銘柄
+                symbol=result.symbol,
+                # 売買タイプ
+                cmd=bk_const.CMD_ORDER_TYPE_MAP[result.cmd],
+                # 売買時の価格
+                volume=result.volume,
+                # 取引数量
+                lot=result.lot,
+                # 損切価格
+                stoploss=result.stoploss,
+                # 決済価格
+                takeprofit=result.stoploss,
+            )

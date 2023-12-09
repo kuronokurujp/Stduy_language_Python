@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from modules.broker.event import (
-    BaseOrderSendEventResult,
+    OrderSendEventResult,
     ICloseSendEventResult,
     IAllCloseSendEventResult,
 )
@@ -22,5 +22,5 @@ class BaseModel(object):
     def __init__(self) -> None:
         pass
 
-    def add_orderevent_result(self, result: BaseOrderSendEventResult):
+    def add_orderevent_result(self, result: OrderSendEventResult):
         self.__order_list.append(result)

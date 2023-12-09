@@ -1,45 +1,30 @@
 #!/usr/bin/env python
+import datetime
 from modules.broker.event import (
     IOrderSendEvent,
-    IAllCloseSendEvent,
-    ICloseSendEvent,
-    ICloseSendEventResult,
-    IAllCloseSendEventResult,
-    BaseOrderSendEventResult,
 )
-import datetime
+import modules.broker.const as bk_const
 
 
-# TODO: デモの注文リザルト
-class OrderSendEventResult(BaseOrderSendEventResult):
-    pass
-
-
-# TODO: デモでの注文イベント
+# TODO: デモでの新規注文イベント
 class OrderSendEvent(IOrderSendEvent):
-    __result = OrderSendEventResult()
-
-    def __init__(
-        self,
-        symbol: str,
-        cmd: int,
-        volume: float,
-        price: float,
-        slippage: int,
-        stoploss: float,
-        takeprofit: float,
-        comment: str = None,
-        magic: int = 0,
-        expiration: datetime.datetime = 0,
-        spread: float = -1,
-    ) -> None:
-        # TODO: 適当な値を入れる
-        pass
-
-    # TODO: イベントを走らせる
     async def run(self) -> bool:
-        return True
+        # TODO: 即時成功で良い
+        order_cmd_msg: str = ""
+        if self.result.cmd == bk_const.CMD_ORDER_BUY:
+            order_cmd_msg = "新規買い"
+        elif self.result.cmd == bk_const.CMD_ORDER_SELL:
+            order_cmd_msg = "新規売り"
+        else:
+            return False
 
-    # TODO: runの結果を取得
-    def result(self) -> BaseOrderSendEventResult:
-        return self.__result
+        # TODO: 注文に成功したので取引時間を設定
+        dt_now = datetime.datetime.now()
+        self.result.date_time = dt_now.strftime("%Y年%m月%d日 %H:%M:%S")
+
+        self.result.set(
+            b_success=True,
+            err_msg="",
+            ok_msg="{}が成功, 建玉は{}".format(order_cmd_msg, self.result.volume),
+        )
+        return True

@@ -2,6 +2,9 @@
 from abc import ABC, abstractmethod
 import datetime
 
+# TODO: 定数一覧
+ORDER_BUY: int = 0
+ORDER_SELL: int = 1
 
 # TODO: UIViewのイベントインターフェイス
 class IUIViewEvent(ABC):
@@ -26,45 +29,39 @@ class IUIViewEvent(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def even_add_strategy(self, name: str, b_demo: bool):
+    def event_add_strategy(self, name: str, broker_name: str, symbole_type: int, lot: float) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
-    def event_order_buy(
+    def event_order(
         self,
         broker: int,
-        symbol: str,
+        symbol: int,
         cmd: int,
-        volume: float,
-        price: float,
-        slippage: int,
-        stoploss: float,
-        takeprofit: float,
+        magic: int,
+        price: float = -1,
+        slippage: int = -1,
+        stoploss: float = -1,
+        takeprofit: float = -1,
+        volume: float = -1,
         comment: str = None,
-        magic: int = 0,
-        aExpiration: datetime.datetime = 0,
+        aExpiration: datetime.datetime = -1,
         aSpread: float = -1,
     ):
         raise NotImplementedError()
 
     @abstractmethod
-    def event_order_sell(
+    def event_simple_order(
         self,
-        broker: int,
-        symbol: str,
+        st_idx: int,
         cmd: int,
-        volume: float,
-        price: float,
-        slippage: int,
-        stoploss: float,
-        takeprofit: float,
-        comment: str = None,
-        magic: int = 0,
-        aExpiration: datetime.datetime = 0,
-        aSpread: float = -1,
     ):
         raise NotImplementedError()
 
     @abstractmethod
-    def event_error(self, ex: Exception):
+    def event_all_close(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def event_error(self, type, value, trace):
         raise NotImplementedError()
