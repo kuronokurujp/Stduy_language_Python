@@ -37,8 +37,8 @@ Sample Python List
                     - pyenv : このシステムではスクリプトの実行が無効になっているため...
                 - このメッセージは PowerShell のポリシー設定が原因なので以下のサイトを参考にして解決できた
                     - [「このシステムではスクリプトの実行が無効になっているため～～～を読み込むことができません」の対処法【Windows】](https://nishikiout.hatenablog.com/entry/2023/03/08/012215)
-    - 参考サイト
-        - [pyenv 利用のまとめ](https://qiita.com/m3y/items/45c7be319e401b24fca8)
+    -   参考サイト
+        -   [pyenv 利用のまとめ](https://qiita.com/m3y/items/45c7be319e401b24fca8)
 
 ## venv などの仮想環境を動かすための準備
 
@@ -74,18 +74,21 @@ Sample Python List
 ## 仮想環境作成
 
 -   win 版
-    - pyenvが入っている場合
-        - [参考にしたサイト](https://zenn.dev/sion_pn/articles/4418eeda7c62d0)
-        1. 利用するpythonをインストールする
+
+    -   pyenv が入っている場合
+
+        -   [参考にしたサイト](https://zenn.dev/sion_pn/articles/4418eeda7c62d0)
+
+        1. 利用する python をインストールする
             - pyenv install xxx
-                - xxxにインストールしたいpythonのバージョンを指定
+                - xxx にインストールしたい python のバージョンを指定
                 - インストールできるバージョンのリストは以下のコマンドで出力できる
                     - pyenv install --list
         1. プロジェクトディレクトリに移動
-        1. プロジェクトで利用するpythonのバージョンを設定
+        1. プロジェクトで利用する python のバージョンを設定
             - pyenv local xxx
-        1. プロジェクトディレクトリに.python-versionファイルが作成しているかチェック
-        1. .python-versionファイルはgitにコミットしないように無視リストに追加
+        1. プロジェクトディレクトリに.python-version ファイルが作成しているかチェック
+        1. .python-version ファイルは git にコミットしないように無視リストに追加
 
     -   以下のコマンドで環境作成
         -   python -m venv venv
@@ -171,29 +174,58 @@ Sample Python List
 
 -   win 版
 
-    -   以下のコマンドで mypy をインストール
-        pip install mypy
-    -   設定画面の mypy の利用を有効化する
+    -   mypy
 
-        -   グローバル設定ファイル settgins.json に以下の記述を追加
-            "python.linting.mypyEnabled": true
+        -   以下のコマンドで mypy をインストール
+            pip install mypy
+        -   設定画面の mypy の利用を有効化する
 
-    -   関数を作成した動作確認
+            -   グローバル設定ファイル settgins.json に以下の記述を追加
+                "python.linting.mypyEnabled": true
 
-        -   以下のコードを添付して hello(123)の箇所でエラーが表示しているなら成功
-            def hello(name: str) -> str:
-            return "Hello " + name
+        -   関数を作成した動作確認
 
-        result: str = hello(123)
+            -   以下のコードを添付して hello(123)の箇所でエラーが表示しているなら成功
+                def hello(name: str) -> str:
+                return "Hello " + name
 
-    -   メモ
-        -   pyfields のパッケージを使うと正しいコードを記述しているのにその箇所がエラーとなっていた
-            -   つまり不十分！
-        -   クラスのメソッドで戻り値の型ヒントを付けているメソッドをエラーとしていた。
-        -   これは利用しない方がいいと判断した
-        -   導入が簡単だから入れたが、失敗だった
-    -   参考サイト
-        [mypy を VS code で使うための手順](https://yoshitaku-jp.hatenablog.com/entry/2020/12/28/130000)
+            result: str = hello(123)
+
+        -   メモ
+            -   pyfields のパッケージを使うと正しいコードを記述しているのにその箇所がエラーとなっていた
+            -   クラスのメソッドで戻り値の型ヒントを付けているメソッドをエラーとしていた。
+            -   これは利用しない方がいいと判断した
+            -   導入が簡単だから入れたが、制度が悪く利用したのは失敗だった
+        -   参考サイト
+            [mypy を VS code で使うための手順](https://yoshitaku-jp.hatenablog.com/entry/2020/12/28/130000)
+
+    -   flake8
+        -   以下のコマンドで flake8 をインストール
+            pip install flake8
+        -   flake8 を利用する拡張機能を追加
+            -   [cornflakes-linter](https://marketplace.visualstudio.com/items?itemName=kevinglasson.cornflakes-linter)
+        -   flake8 の設定ファイル tox.ini ファイルをワークススペースのトップディレクトリに配置
+            -   tox.ini ファイルに flake8 のオプションを記述できる
+                [flake8 のオプション一覧](https://flake8.pycqa.org/en/latest/user/options.html#top)
+        -   vscode ワークスペースの設定
+            -   .vscode/setting.json を作成
+            -   setting.json に下記の記述を追加
+                // flake8 の設定
+                // 絶対パスでないと機能しない
+                "cornflakes.linter.executablePath": "インストールした flake8.exe の絶対パス(相対パスだとだめだった)",
+                // lint を有効
+                "python.linting.enabled": true,
+                // デフォルトの lint セーブは無効
+                "python.linting.lintOnSave": false,
+                // 初期状態の pylint は無効
+                "python.linting.pylintEnabled": false,
+                // デフォルトの flake8 は無効
+                "python.linting.flake8Enabled": false,
+        -   メモ
+            -   ファイルを開かないと問題点が表示しない
+            -   全ファイルを問題点を出すには flake8 ./ をターミナルに打てばカレントディレクトリ内にすべての py ファイルをチェックできた
+        -   参考サイト
+            [VSCode での Python 開発でリアルタイムにコードチェックが走るようにする](https://qiita.com/sakusaku_tempura/items/573e0a6e40bfc1960fd4)
 
 ## フォーマットに合わせてコード整形する環境作成
 
@@ -207,7 +239,7 @@ Sample Python List
             "python.formatting.provider": "black"
 
     -   alt + shift + f のショートカットキーでコード整形を実行
-        -   Black で整形するための拡張機能がなけらばインストールを要求するのでその場合はインストール
+        -   Black で整形するための拡張機能がなければインストールを要求するのでその場合はインストール
     -   コードが整形されていたら成功
 
     -   参考サイト
@@ -266,7 +298,7 @@ Sample Python List
     -   以下のコマンドで requirements.txt に記載したパッケージ一覧をインポートできる
         pip install -r requirements.txt
 
-## Django 
+## Django
 
 ### ローカライズ対応
 
