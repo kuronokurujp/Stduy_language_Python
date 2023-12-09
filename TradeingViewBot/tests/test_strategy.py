@@ -1,37 +1,46 @@
 #!/usr/bin/env python
 import traceback
-import modules.strategy.object
-import modules.broker.const
+import modules.strategy.object as st_obj
+import modules.broker.const as bk_const
 
 
 def test_add_strategy():
-    data_manager: modules.strategy.object.DataObjectManager = (
-        modules.strategy.object.DataObjectManager()
-    )
+    data_manager: st_obj.DataObjectManager = st_obj.DataObjectManager()
 
     for i in range(100):
         b_flg, msg, id, idx = data_manager.add_object(
             name="test",
-            broker_type=modules.broker.const.BROKER_TYPE_DEMO,
+            broker_type=bk_const.BROKER_TYPE_DEMO,
             symbol_type=0,
             lot=1,
         )
+
         print(msg)
         assert b_flg
         assert 0 < id
         assert 0 <= idx
 
+    # idが重複していないかチェック
+    for i in range(len(data_manager.objects) - 1):
+        id = data_manager.objects[i].id
+        objs = data_manager.objects[i+1:].copy()
+        hit_objs: list[st_obj.DataObject] = list(
+            filter(lambda obj: obj.id == id, objs)
+        )
+        if 0 < len(hit_objs):
+            print("error: 戦略追加失敗. idが重複している({})".format(id))
+            assert False
+
+
 
 def test_del_strategy():
-    data_manager: modules.strategy.object.DataObjectManager = (
-        modules.strategy.object.DataObjectManager()
-    )
+    data_manager: st_obj.DataObjectManager = st_obj.DataObjectManager()
 
     # 追加データのidで削除できるか
     for i in range(100):
         b_flg, msg, id = data_manager.add_object(
             name="test",
-            broker_type=modules.broker.const.BROKER_TYPE_DEMO,
+            broker_type=bk_const.BROKER_TYPE_DEMO,
             symbol_type=0,
             lot=1,
         )
@@ -49,7 +58,7 @@ def test_del_strategy():
     # indexでの削除ができるか
     b_flg, msg, id = data_manager.add_object(
         name="test",
-        broker_type=modules.broker.const.BROKER_TYPE_DEMO,
+        broker_type=bk_const.BROKER_TYPE_DEMO,
         symbol_type=0,
         lot=1,
     )
@@ -58,7 +67,7 @@ def test_del_strategy():
 
     b_flg, msg, id = data_manager.add_object(
         name="test",
-        broker_type=modules.broker.const.BROKER_TYPE_DEMO,
+        broker_type=bk_const.BROKER_TYPE_DEMO,
         symbol_type=0,
         lot=1,
     )
@@ -68,13 +77,11 @@ def test_del_strategy():
 
 
 def test_get_strategy():
-    data_manager: modules.strategy.object.DataObjectManager = (
-        modules.strategy.object.DataObjectManager()
-    )
+    data_manager: st_obj.DataObjectManager = st_obj.DataObjectManager()
 
     b_flg, msg, id = data_manager.add_object(
         name="test",
-        broker_type=modules.broker.const.BROKER_TYPE_DEMO,
+        broker_type=bk_const.BROKER_TYPE_DEMO,
         symbol_type=0,
         lot=1,
     )
@@ -83,13 +90,13 @@ def test_get_strategy():
 
     try:
         # 追加データのidで削除できるか
-        object: modules.strategy.object.DataObject = data_manager.get_object(id=id)
+        object: st_obj.DataObject = data_manager.get_object(id=id)
         if object is None:
             print("None object id({})".format(id))
             assert False
 
         # 追加したデータのidxで削除できるか
-        object: modules.strategy.object.DataObject = data_manager.get_object_at(idx=0)
+        object: st_obj.DataObject = data_manager.get_object_at(idx=0)
         if object is None:
             print("None object idx({})".format(0))
             assert False
