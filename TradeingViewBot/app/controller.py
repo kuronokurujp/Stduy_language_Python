@@ -2,7 +2,7 @@
 import traceback
 import modules.ui.view as ui_view
 import modules.ui.interface as ui_interface
-
+import modules.utility.random as utility_rnd
 import modules.log.interface as log_interface
 
 import modules.ngrok.controller as ng_ctrl
@@ -161,6 +161,7 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
         cmd: int,
         magic: int,
         lot: float,
+        ticket: int,
         price: float = -1,
         slippage: int = -1,
         stoploss: float = -1,
@@ -177,6 +178,7 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
         match (st_obj.broker_type):
             case bk_const.BROKER_TYPE_DEMO:
                 order_event = bk_demo_event.OrderSendEvent(
+                    ticket=ticket,
                     symbol=st_obj.symbole_type,
                     # 戦略名
                     strategy=st_obj.name,
@@ -194,6 +196,8 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
                     expiration=aExpiration,
                     spread=aSpread,
                 )
+
+        # TODO: 取引情報を戦略に結びつける
 
         # TODO: 取引実行する
         # TODO: 取引結果を受け取るイベントが必要
@@ -219,13 +223,19 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
 
         # TODO: 銘柄に応じた現在の最新価格を取得
         volume: float = 0
+        # TODO: チケットを生成
+        ticket: int = utility_rnd.random_num()
+
+        # TODO: チケットがかぶっていないかチェック
+        # TODO: かぶっているならかぶらない値を作る
 
         self.event_order(
             current_st_obj,
             cmd=cmd_order,
             magic=st_idx,
             lot=current_st_obj.lot,
-            volume=0,
+            volume=volume,
+            ticket=ticket,
         )
 
     def event_all_close(self):
@@ -249,6 +259,7 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
         else:
             # 注文成功
             self.__logger.info(result.ok_msg)
+
             # TODO: 取引項目を追加
             self.__view_ctrl.add_transaction_item(
                 # 注文番号

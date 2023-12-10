@@ -291,12 +291,25 @@ class MainWindow(BaseWindow):
             "決済価格",
         ]
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
+        visible_columns: list[bool] = [
+            False,
+            True,
+            True,
+            True,
+            True,
+            True,
+            True,
+            True,
+            True,
+            True
+        ]
 
         return (
             [
                 sg.Table(
                     values=[],
                     headings=headings,
+                    visible_column_map=visible_columns,
                     max_col_width=25,
                     auto_size_columns=True,
                     display_row_numbers=False,

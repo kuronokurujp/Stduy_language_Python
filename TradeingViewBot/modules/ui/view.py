@@ -18,8 +18,6 @@ class ViewController(object):
     __main_win: MainWindow = None
     __child_win: list[BaseWindow] = list()
 
-    __strategy_form_win: StrategyFormWindow = None
-
     def __init__(
         self,
         model: Model,

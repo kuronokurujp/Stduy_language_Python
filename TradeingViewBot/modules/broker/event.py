@@ -28,6 +28,8 @@ class BaseEventResult(object):
 
 # TODO: 注文イベントの結果
 class OrderSendEventResult(BaseEventResult):
+    # 戦略番号
+
     # 注文番号
     ticket: int = 0
     # 注文時間
@@ -99,6 +101,8 @@ class IOrderSendEvent(ABC):
 
     def __init__(
         self,
+        # 注文チケット
+        ticket: int,
         symbol: str,
         # 戦略名
         strategy: str,
@@ -116,11 +120,8 @@ class IOrderSendEvent(ABC):
         expiration: datetime.datetime,
         spread: float,
     ) -> None:
-        # TODO: チケット番号を生成
-        # TODO: ユニーク番号を生成
-        tikcet: int = 0
         self.__result = OrderSendEventResult(
-            ticket=tikcet,
+            ticket=ticket,
             # 戦略名
             strategy=strategy,
             # 証券会社
