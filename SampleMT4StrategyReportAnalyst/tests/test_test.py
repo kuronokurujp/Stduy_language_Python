@@ -187,8 +187,8 @@ def test_output_final_data():
 
     path_data_list: list = [
         [
-            "C:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output/H4",
-            "20231202_H4",
+            "output/M5",
+            "20240102_M5",
             None,
         ],
     ]
@@ -208,7 +208,7 @@ def test_output_final_data():
 
         # 出力
         mt4.output_xlsx(
-            dir_fullpath="C:\Work\Study\Stduy_language_Python\SampleMT4StrategyReportAnalyst\output",
+            dir_fullpath="output",
             filename=path_data[1],
             pair_model_list=pair_model_list,
             curreny_model_dict=dict,
