@@ -87,6 +87,8 @@ Sample Python List
         1. プロジェクトディレクトリに移動
         1. プロジェクトで利用する python のバージョンを設定
             - pyenv local xxx
+            - インストール済みバージョン一覧は以下のコマンドで出力できる
+                - pyenv versions
         1. プロジェクトディレクトリに.python-version ファイルが作成しているかチェック
         1. .python-version ファイルは git にコミットしないように無視リストに追加
 
@@ -173,32 +175,6 @@ Sample Python List
 ## コードチェックのツール mypy の環境作成
 
 -   win 版
-
-    -   mypy
-
-        -   以下のコマンドで mypy をインストール
-            pip install mypy
-        -   設定画面の mypy の利用を有効化する
-
-            -   グローバル設定ファイル settgins.json に以下の記述を追加
-                "python.linting.mypyEnabled": true
-
-        -   関数を作成した動作確認
-
-            -   以下のコードを添付して hello(123)の箇所でエラーが表示しているなら成功
-                def hello(name: str) -> str:
-                return "Hello " + name
-
-            result: str = hello(123)
-
-        -   メモ
-            -   pyfields のパッケージを使うと正しいコードを記述しているのにその箇所がエラーとなっていた
-            -   クラスのメソッドで戻り値の型ヒントを付けているメソッドをエラーとしていた。
-            -   これは利用しない方がいいと判断した
-            -   導入が簡単だから入れたが、制度が悪く利用したのは失敗だった
-        -   参考サイト
-            [mypy を VS code で使うための手順](https://yoshitaku-jp.hatenablog.com/entry/2020/12/28/130000)
-
     -   flake8
         -   以下のコマンドで flake8 をインストール
             pip install flake8
@@ -255,7 +231,7 @@ Sample Python List
     - pip でインストール
         - pip install pytest
 1. tests ディレクトリを作成
-    1. 作成したディレクトリに**init**.py を作成
+    1. 作成したディレクトリに**__init__.py** を作成
         - これを作成しないと自作パッケージのインポートでうまくいかずテストが実行できない
 1. py ファイルを作成
     - test_xxx の関数を作成する
@@ -292,11 +268,16 @@ Sample Python List
 -   エクスポート方法
 
     -   以下のコマンドでインストールしたパッケージ一覧を記載したファイルをエクスポートできる
-        pip freeze > requirements.txt
+        pip freeze > requirements.txtip freeze > requirements.txt
 
 -   インポート方法
     -   以下のコマンドで requirements.txt に記載したパッケージ一覧をインポートできる
         pip install -r requirements.txt
+
+## 単純作業をシェル or バッチファイルで自動化
+- Shellディレクトリにまとめている
+- 自動化リスト
+    - 新規開発プロジェクトを作成
 
 ## Django
 
