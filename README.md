@@ -268,7 +268,7 @@ Sample Python List
 -   エクスポート方法
 
     -   以下のコマンドでインストールしたパッケージ一覧を記載したファイルをエクスポートできる
-        pip freeze > requirements.txtip freeze > requirements.txt
+        pip freeze > requirements.txt
 
 -   インポート方法
     -   以下のコマンドで requirements.txt に記載したパッケージ一覧をインポートできる
