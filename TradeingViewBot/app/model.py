@@ -98,6 +98,10 @@ class Model(object):
     def get_strategy_at(self, idx: int) -> modules.strategy.object.DataObject:
         return self.__strategy_data_manager.get_object_at(idx=idx)
 
+    # TODO: 戦略の取得(idから)
+    def get_strategy(self, id: int) -> modules.strategy.object.DataObject:
+        return self.__strategy_data_manager.get_object(id=id)
+
     # TODO: 証券会社のモデルを取得
     def get_broker_model(self, broker_type: int) -> modules.broker.model.BaseModel:
         if broker_type in self.__broker_models:

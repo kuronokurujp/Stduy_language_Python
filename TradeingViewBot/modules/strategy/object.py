@@ -16,6 +16,9 @@ class DataObject(object):
 
     __id: int = -1
 
+    # TODO: 注文した取引チケット一覧
+    __transaction_tickets: list[int] = list[int]()
+
     def __init__(
         self,
         name: str,
@@ -55,6 +58,18 @@ class DataObject(object):
     @property
     def lot(self) -> float:
         return self.__lot
+
+    @property
+    def transaction_tickets(self) -> list[int]:
+        return self.__transaction_tickets
+
+    # TODO: 取引チケットを追加
+    def add_ticket(self, ticket: int):
+        self.__transaction_tickets.append(ticket)
+
+    # TODO: 取引チケットを削除
+    def remove_ticket(self, ticket: int):
+        self.__transaction_tickets.remove(ticket)
 
 
 # TODO: ストラテジーのデータオブジェクト管理
@@ -96,7 +111,7 @@ class DataObjectManager(object):
                 id, object.name, object.url
             ),
             id,
-            len(self.__objects) - 1
+            len(self.__objects) - 1,
         )
 
     # TODO: DataObjectのidからオブジェクトを破棄

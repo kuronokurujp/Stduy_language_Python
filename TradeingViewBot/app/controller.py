@@ -17,6 +17,8 @@ import modules.broker.demo.controller as bk_demo_ctrl
 import modules.broker.demo.event as bk_demo_event
 import modules.broker.rrss.controller as bk_rrss_ctrl
 
+import modules.background.thread as bk_thread
+
 import datetime
 import app.model
 
@@ -26,6 +28,7 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
     __view_ctrl: ui_view.ViewController = None
     __model: app.model.Model = None
     __logger: log_interface.ILoegger = None
+    __bk_thread_manger: bk_thread.Manager = bk_thread.Manager()
 
     # TODO: ngrok関連
     __ngrok_ctrl: ng_ctrl.Controller = None
@@ -56,7 +59,10 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
         self.__broker_ctrls[bk_const.BROKER_TYPE_DEMO] = bk_demo_ctrl.Controller(
             model=self.__model.get_broker_model(bk_const.BROKER_TYPE_DEMO),
             callback=self,
+            logger=logger,
         )
+        # TODO: バックグラウンドスレッド設定
+        self.__bk_thread_manger.create(self.__broker_ctrls[bk_const.BROKER_TYPE_DEMO])
 
         rrss_model = self.__model.get_broker_model(bk_const.BROKER_TYPE_RAKUTEN_RSS)
         if rrss_model is not None:
@@ -157,7 +163,7 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
     # TODO: 新規注文
     def event_order(
         self,
-        st_obj: st_obj.DataObject,
+        st_id: int,
         cmd: int,
         magic: int,
         lot: float,
@@ -174,14 +180,17 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
         # TODO: 注文のイベント作成して対応ブローカーに投げる
         order_event: bk_ctrl.IOrderSendEvent = None
 
-        broker_name: str = bk_const.BROKER_TYPE_MAP[st_obj.broker_type]
-        match (st_obj.broker_type):
+        st: st_obj.DataObject = self.__model.get_strategy(id=st_id)
+
+        broker_name: str = bk_const.BROKER_TYPE_MAP[st.broker_type]
+        match (st.broker_type):
             case bk_const.BROKER_TYPE_DEMO:
                 order_event = bk_demo_event.OrderSendEvent(
+                    st_id=st_id,
                     ticket=ticket,
-                    symbol=st_obj.symbole_type,
+                    symbol=st.symbole_type,
                     # 戦略名
-                    strategy=st_obj.name,
+                    strategy=st.name,
                     # 証券会社
                     broker=broker_name,
                     cmd=cmd,
@@ -197,11 +206,8 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
                     spread=aSpread,
                 )
 
-        # TODO: 取引情報を戦略に結びつける
-
         # TODO: 取引実行する
-        # TODO: 取引結果を受け取るイベントが必要
-        self.__broker_ctrls[st_obj.broker_type].event_ordersend(order_event)
+        self.__broker_ctrls[st.broker_type].event_ordersend(order_event)
 
     # TODO: 戦略データidx指定での新規注文
     def event_simple_order(self, st_idx: int, cmd: int):
@@ -230,7 +236,7 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
         # TODO: かぶっているならかぶらない値を作る
 
         self.event_order(
-            current_st_obj,
+            current_st_obj.id,
             cmd=cmd_order,
             magic=st_idx,
             lot=current_st_obj.lot,
@@ -238,8 +244,30 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
             ticket=ticket,
         )
 
-    def event_all_close(self):
-        pass
+    # TODO: すべての注文を強制決済
+    def event_all_close(self, st_idx: int):
+        current_st_obj: st_obj.DataObject = self.__model.get_strategy_at(idx=st_idx)
+        # TODO: 失敗
+        if current_st_obj is None:
+            # TODO: エラー
+            raise Exception("存在しない戦略データを指定({})".format(st_idx))
+
+        # TODO: 注文のイベント作成して対応ブローカーに投げる
+        close_event: bk_ctrl.ICloseSendEvent = None
+
+        # TODO: 戦略と結びついたすべての取引チケットに決済イベント発行する
+        for ticket in current_st_obj.transaction_tickets:
+            # TODO: 決済イベント呼ぶ
+            match (current_st_obj.broker_type):
+                case bk_const.BROKER_TYPE_DEMO:
+                    close_event = bk_demo_event.CloseSendEvent(
+                        st_id=current_st_obj.id,
+                        ticket=ticket,
+                    )
+                    # TODO: 決済実行する
+                    self.__broker_ctrls[current_st_obj.broker_type].event_orderclose(
+                        close_event
+                    )
 
     # TODO: エラー
     def event_error(self, type, value, trace):
@@ -258,7 +286,11 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
             # TODO: アラートを出すのがいいか？
         else:
             # 注文成功
-            self.__logger.info(result.ok_msg)
+            # self.__logger.info(result.ok_msg)
+            # TODO: 注文成功した場合はチケットをストラテジーに追加
+            # TODO: 取引情報を戦略に結びつける
+            st: st_obj.DataObject = self.__model.get_strategy(id=result.st_id)
+            st.add_ticket(result.ticket)
 
             # TODO: 取引項目を追加
             self.__view_ctrl.add_transaction_item(
@@ -282,4 +314,24 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
                 stoploss=result.stoploss,
                 # 決済価格
                 takeprofit=result.stoploss,
+            )
+
+    # 決済結果キャッチ
+    def on_result_closesend(self, result: bk_ctrl.CloseSendEventResult):
+        if result.is_error:
+            # 注文失敗
+            self.__logger.err(result.err_msg)
+            # TODO: アラートを出すのがいいか？
+        else:
+            # 注文成功
+            # self.__logger.info(result.ok_msg)
+
+            # TODO: 注文成功した場合はチケットをストラテジーから外す
+            st: st_obj.DataObject = self.__model.get_strategy(id=result.st_id)
+            st.remove_ticket(result.ticket)
+
+            # TODO: 取引項目から指定したチケットを削除
+            # TODO: 口座履歴に追加
+            self.__view_ctrl.move_transaction_to_account_history(
+                ticket=result.ticket, price=result.price, expiration=result.expiration
             )

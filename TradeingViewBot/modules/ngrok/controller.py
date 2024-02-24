@@ -2,11 +2,9 @@
 import asyncio
 from modules.log.logger import AppLogger
 import modules.ngrok.interface
-from collections.abc import Callable
 import threading
 import json
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
-from typing import Any
 import modules.ngrok.model
 import ngrok
 from urllib.parse import parse_qs, urlparse
@@ -92,7 +90,9 @@ class Controller(modules.ngrok.interface.INgrokController):
     def logger(self) -> AppLogger:
         return self.__logger
 
-    def __init__(self, model: modules.ngrok.model.Model, logger: AppLogger = None) -> None:
+    def __init__(
+        self, model: modules.ngrok.model.Model, logger: AppLogger = None
+    ) -> None:
         self.__model = model
         self.__logger = logger
 
@@ -135,6 +135,7 @@ class Controller(modules.ngrok.interface.INgrokController):
             )
 
             self.__ngrok_listener = ngrok.listen(self.__server)
+            # TODO: ロックはつけなくてもいいの？
             self.__server_thread = threading.Thread(target=self.__server.serve_forever)
             self.__server_thread.daemon = True
             self.__server_thread.start()
@@ -204,4 +205,3 @@ class Controller(modules.ngrok.interface.INgrokController):
             msg = ex
         finally:
             return bRet, msg
-

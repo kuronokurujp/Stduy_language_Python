@@ -44,7 +44,7 @@ class MainWindow(BaseWindow):
                         ),
                         sg.Tab(
                             "口座履歴",
-                            self.__create_accunt_history_layout(),
+                            self.__create_account_history_layout(),
                         ),
                         # sg.Tab(
                         #     "サーバー",
@@ -127,7 +127,10 @@ class MainWindow(BaseWindow):
 
             case self.__KEY_STRATEGY_TRADE_ALL_CLOSE:
                 # TODO: 選択した戦略の全決済
-                event_interface.event_all_close()
+                st_table: sg.Table = self._window[self.__KEY_STRATEGY_TABLE]
+                if 0 < len(st_table.SelectedRows):
+                    st_idx: int = st_table.SelectedRows[0]
+                    event_interface.event_all_close(st_idx=st_idx)
         if (
             isinstance(event, tuple)
             and len(event) == 3
@@ -157,8 +160,14 @@ class MainWindow(BaseWindow):
         table = self._window.find_element(self.__KEY_STRATEGY_TABLE)
         table.update(values=items)
 
+    # TODO: 取引テーブルを更新
     def update_transaction_table(self, items: list):
         table = self._window.find_element(self.__KEY_TRANSACTION_TABLE)
+        table.update(values=items)
+
+    # TODO: 口座履歴テーブルを更新
+    def update_account_history_table(self, items: list):
+        table = self._window.find_element(self.__KEY_ACCOUNT_HI_TABLE)
         table.update(values=items)
 
     def __create_menubar(self) -> sg.Menu:
@@ -188,7 +197,7 @@ class MainWindow(BaseWindow):
 
     # TODO: 左クリック押したら選択解除
     # TODO: 口座履歴
-    def __create_accunt_history_layout(self):
+    def __create_account_history_layout(self):
         # TODO: 列名とデータキー名のマッピング作る
         headers: list = [
             "注文番号",
@@ -202,11 +211,14 @@ class MainWindow(BaseWindow):
             "決済価格",
         ]
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
+        # テキスト色を黒にしている
+        text_color = '#000'
 
         return (
             [
                 sg.Table(
                     values=[],
+                    text_color=text_color,
                     headings=headings,
                     max_col_width=25,
                     auto_size_columns=True,
@@ -220,7 +232,8 @@ class MainWindow(BaseWindow):
                     expand_x=True,
                     expand_y=False,
                     vertical_scroll_only=False,
-                    enable_click_events=True,  # Comment out to not enable header and other clicks
+                    # Comment out to not enable header and other clicks
+                    enable_click_events=True,
                 )
             ],
         )
@@ -237,12 +250,15 @@ class MainWindow(BaseWindow):
         visible_columns: list[bool] = [False, True, True, True]
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
 
+        # テキスト色を黒にしている
+        text_color = '#000'
         return (
             [
                 sg.Table(
                     values=[],
                     # 1行のみ選択
                     select_mode=sg.TABLE_SELECT_MODE_BROWSE,
+                    text_color=text_color,
                     headings=headings,
                     max_col_width=25,
                     auto_size_columns=True,
@@ -258,7 +274,8 @@ class MainWindow(BaseWindow):
                     vertical_scroll_only=False,
                     visible_column_map=visible_columns,
                     # 右クリックで選択？
-                    enable_click_events=True,  # Comment out to not enable header and other clicks
+                    # Comment out to not enable header and other clicks
+                    enable_click_events=True,
                     right_click_selects=True,
                     # 押せるかどうか制御できる？
                     right_click_menu=[
@@ -290,6 +307,9 @@ class MainWindow(BaseWindow):
             "損切価格",
             "決済価格",
         ]
+        # テキスト色を黒にしている
+        text_color = '#000'
+
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
         visible_columns: list[bool] = [
             False,
@@ -301,7 +321,7 @@ class MainWindow(BaseWindow):
             True,
             True,
             True,
-            True
+            True,
         ]
 
         return (
@@ -309,6 +329,7 @@ class MainWindow(BaseWindow):
                 sg.Table(
                     values=[],
                     headings=headings,
+                    text_color=text_color,
                     visible_column_map=visible_columns,
                     max_col_width=25,
                     auto_size_columns=True,
@@ -322,7 +343,8 @@ class MainWindow(BaseWindow):
                     expand_x=True,
                     expand_y=False,
                     vertical_scroll_only=False,
-                    enable_click_events=True,  # Comment out to not enable header and other clicks
+                    # Comment out to not enable header and other clicks
+                    enable_click_events=True,
                 )
             ],
         )

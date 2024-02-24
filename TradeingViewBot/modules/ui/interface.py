@@ -6,6 +6,7 @@ import datetime
 ORDER_BUY: int = 0
 ORDER_SELL: int = 1
 
+
 # TODO: UIViewのイベントインターフェイス
 class IUIViewEvent(ABC):
     @abstractmethod
@@ -29,7 +30,9 @@ class IUIViewEvent(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def event_add_strategy(self, name: str, broker_name: str, symbole_type: int, lot: float) -> bool:
+    def event_add_strategy(
+        self, name: str, broker_name: str, symbole_type: int, lot: float
+    ) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
@@ -59,7 +62,7 @@ class IUIViewEvent(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def event_all_close(self):
+    def event_all_close(self, st_idx: int):
         raise NotImplementedError()
 
     @abstractmethod

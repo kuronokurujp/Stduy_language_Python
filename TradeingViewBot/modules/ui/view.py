@@ -2,6 +2,7 @@
 import sys
 import PySimpleGUI as sg
 import modules.ui.interface
+import datetime
 
 # 利用するウィンドウクラス
 from modules.ui.windows.main import MainWindow
@@ -132,3 +133,48 @@ class ViewController(object):
             ]
         )
         self.__main_win.update_transaction_table(items=self.__model.transaction_items)
+
+    # TODO: 取引項目から口座履歴に移動
+    def move_transaction_to_account_history(
+        self, ticket: int,
+        price: int,
+        expiration: datetime.datetime,
+        ):
+        trans_item = self.__model.transaction_item(tikcet=ticket)
+        if trans_item is None:
+            return
+
+        # TODO: 取引データを外す
+        self.__model.remove_transsaction_item_by_tikcet(ticket=ticket)
+        # TODO: 口座履歴に決済した取引データを追加
+        self.__model.add_account_history_item(
+            [
+                # チケット番号
+                trans_item[0],
+                # 注文時間
+                trans_item[1],
+                # 証券会社
+                trans_item[3],
+                # 取引種別
+                trans_item[5],
+                # 数量
+                trans_item[7],
+                # 銘柄
+                trans_item[4],
+                # 注文価格
+                trans_item[6],
+                # 決済時間
+                expiration,
+                # 決済価格
+                price,
+            ]
+        )
+
+        # TODO: 画面更新
+        self.__main_win.update_transaction_table(
+            items=self.__model.transaction_items)
+
+        self.__main_win.update_account_history_table(
+            items=self.__model.account_history_items)
+
+

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import datetime
 
 
+# TODO: イベント結果のひな形クラス
 class BaseEventResult(object):
     __b_success: bool = False
     __err_msg: str = ""
@@ -10,7 +11,7 @@ class BaseEventResult(object):
 
     @property
     def is_error(self) -> bool:
-        return self.__b_success == False
+        return not self.__b_success
 
     @property
     def err_msg(self) -> str:
@@ -20,7 +21,7 @@ class BaseEventResult(object):
     def ok_msg(self) -> str:
         return self.__ok_msg
 
-    def set(self, b_success: bool, err_msg: str, ok_msg):
+    def set(self, b_success: bool, err_msg: str = "", ok_msg: str = ""):
         self.__b_success = b_success
         self.__err_msg = err_msg
         self.__ok_msg = ok_msg
@@ -29,6 +30,7 @@ class BaseEventResult(object):
 # TODO: 注文イベントの結果
 class OrderSendEventResult(BaseEventResult):
     # 戦略番号
+    st_id: int = 0
 
     # 注文番号
     ticket: int = 0
@@ -53,12 +55,13 @@ class OrderSendEventResult(BaseEventResult):
 
     def __init__(
         self,
+        st_id: int,
         ticket: int,
         # 戦略名
         strategy: str,
         # 証券会社
         broker: str,
-        symbol: str,
+        symbol: int,
         cmd: int,
         volume: float,
         price: float,
@@ -73,6 +76,7 @@ class OrderSendEventResult(BaseEventResult):
     ) -> None:
         super().__init__()
 
+        self.st_id = st_id
         self.ticket = ticket
         self.strategy = strategy
         self.broker = broker
@@ -101,9 +105,12 @@ class IOrderSendEvent(ABC):
 
     def __init__(
         self,
+        # 戦略ID
+        st_id: int,
         # 注文チケット
         ticket: int,
-        symbol: str,
+        # 銘柄
+        symbol: int,
         # 戦略名
         strategy: str,
         # 証券会社
@@ -121,6 +128,7 @@ class IOrderSendEvent(ABC):
         spread: float,
     ) -> None:
         self.__result = OrderSendEventResult(
+            st_id=st_id,
             ticket=ticket,
             # 戦略名
             strategy=strategy,
@@ -143,43 +151,65 @@ class IOrderSendEvent(ABC):
 
     # TODO: イベントを走らせる
     @abstractmethod
-    async def run(self) -> bool:
-        return True
+    async def run(self) -> int:
+        return 0
 
 
 # TODO: 決済結果
-class ICloseSendEventResult(ABC):
-    pass
+class CloseSendEventResult(BaseEventResult):
+    st_id: int = 0
+    ticket: int = 0
+    lot: float = 0.0
+    price: float = 0.0
+    slippage: int = 0
+    expiration: datetime.datetime = 0
+
+    def __init__(
+        self,
+        st_id: int,
+        ticket: int,
+        lot: float,
+        price: float,
+        slippage: int,
+    ) -> None:
+        self.st_id = st_id
+        self.ticket = ticket
+        self.lot = lot
+        self.price = price
+        self.slippage = slippage
+
+    def set(
+        self,
+        b_success: bool,
+        err_msg: str = "",
+        ok_msg: str = "",
+        expiration: datetime.datetime = 0,
+    ):
+        super().set(b_success=b_success, err_msg=err_msg, ok_msg=ok_msg)
+        self.expiration = expiration
 
 
 # TODO: 決済取引イベント
 class ICloseSendEvent(ABC):
-    @abstractmethod
-    def __init__(self, ticket: int, lots: float, price: float, slippage: int) -> None:
-        pass
-
-    @abstractmethod
-    async def run(self) -> bool:
-        return True
+    __result: CloseSendEventResult = None
 
     # TODO: runの結果を取得
+    @property
+    def result(self) -> CloseSendEventResult:
+        return self.__result
+
+    def __init__(
+        self,
+        st_id: int,
+        ticket: int,
+        lot: float = -1.0,
+        price: float = -1.0,
+        slippage: int = -1.0,
+    ) -> None:
+        self.__result = CloseSendEventResult(
+            st_id=st_id, ticket=ticket, lot=lot, price=price, slippage=slippage
+        )
+
     @abstractmethod
-    def result(self) -> ICloseSendEventResult:
-        return ICloseSendEventResult()
-
-
-# TODO: 全決済結果
-class IAllCloseSendEventResult(ABC):
-    pass
-
-
-# TODO: 全決済取引イベント
-class IAllCloseSendEvent(ABC):
-    @abstractmethod
-    async def run(self) -> bool:
-        return True
-
-    # TODO: runの結果を取得
-    @abstractmethod
-    def result(self) -> IAllCloseSendEventResult:
-        return IAllCloseSendEventResult()
+    async def run(self) -> int:
+        return 0
