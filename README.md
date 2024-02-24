@@ -92,7 +92,7 @@ Sample Python List
         1. プロジェクトディレクトリに.python-version ファイルが作成しているかチェック
         1. .python-version ファイルは git にコミットしないように無視リストに追加
 
-    -   以下のコマンドで環境作成
+-   以下のコマンドで環境作成
         -   python -m venv venv
 
 ## 仮想環境有効
