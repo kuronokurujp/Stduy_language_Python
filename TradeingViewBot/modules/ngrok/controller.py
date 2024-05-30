@@ -127,14 +127,20 @@ class Controller(modules.ngrok.interface.INgrokController):
             self.cmd_stop_listen()
 
         try:
-            ngrok.connect(authtoken=self.__model.token, prot="http")
+            self.__ngrok_listener = ngrok.forward(
+                "localhost:{}".format(self.__model.http_port),
+                authtoken=self.__model.token,
+                prot="http",
+            )
             self.__server = NgrokHTTPServer(
                 ("localhost", self.__model.http_port),
                 NgrokHttpRequestHandler,
                 controller=self,
             )
 
-            self.__ngrok_listener = ngrok.listen(self.__server)
+            # TODO: 以下を呼ぶと例外エラー(ERR_NGROK_4018)になる
+            # self.__ngrok_listener = ngrok.listen(self.__server)
+
             # TODO: ロックはつけなくてもいいの？
             self.__server_thread = threading.Thread(target=self.__server.serve_forever)
             self.__server_thread.daemon = True

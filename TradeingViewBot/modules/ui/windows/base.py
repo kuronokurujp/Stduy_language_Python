@@ -11,6 +11,8 @@ class BaseWindow(object):
     __size = (0, 0)
 
     def __init__(self, title: str, size) -> None:
+        super().__init__()
+
         self.__title = title
         self.__size = size
 

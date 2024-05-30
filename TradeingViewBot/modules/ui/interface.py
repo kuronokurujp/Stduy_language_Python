@@ -66,5 +66,13 @@ class IUIViewEvent(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def event_copy_alert_url(self, st_idx: int):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def event_copy_alert_message(self, st_idx: int):
+        raise NotImplementedError()
+
+    @abstractmethod
     def event_error(self, type, value, trace):
         raise NotImplementedError()

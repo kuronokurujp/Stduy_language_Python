@@ -1,11 +1,13 @@
 #!/usr/bin/env python
+import asyncio
 import sys
 import PySimpleGUI as sg
 import modules.ui.interface
 import datetime
 
 # 利用するウィンドウクラス
-from modules.ui.windows.main import MainWindow
+# from modules.ui.windows.main import MainWindow
+from modules.ui.windows.main_kivy import MainWindow
 from modules.ui.windows.base import BaseWindow
 from modules.ui.windows.strategy_form import StrategyFormWindow
 from modules.ui.model import Model
@@ -29,13 +31,17 @@ class ViewController(object):
         self.__model = model
         self.__event_interface = event_i
 
-        self.__main_win = MainWindow(title=self.__model.title, size=self.__model.size)
-        sg.theme("Dark")
+        # self.__main_win = MainWindow(title=self.__model.title, size=self.__model.size)
+        self.__main_win = MainWindow()
+
+    #   sg.theme("Dark")
 
     def open(self, b_screen: bool = False):
-        self.__main_win.open(b_screen=b_screen)
-
+        #self.__main_win.open(b_screen=b_screen)
         self.__event_interface.event_open()
+
+        asyncio.run(self.__main_win.async_run(async_lib="asyncio"))
+        # self.__main_win.run()
 
         while True:
             try:
@@ -136,10 +142,11 @@ class ViewController(object):
 
     # TODO: 取引項目から口座履歴に移動
     def move_transaction_to_account_history(
-        self, ticket: int,
+        self,
+        ticket: int,
         price: int,
         expiration: datetime.datetime,
-        ):
+    ):
         trans_item = self.__model.transaction_item(tikcet=ticket)
         if trans_item is None:
             return
@@ -171,10 +178,8 @@ class ViewController(object):
         )
 
         # TODO: 画面更新
-        self.__main_win.update_transaction_table(
-            items=self.__model.transaction_items)
+        self.__main_win.update_transaction_table(items=self.__model.transaction_items)
 
         self.__main_win.update_account_history_table(
-            items=self.__model.account_history_items)
-
-
+            items=self.__model.account_history_items
+        )

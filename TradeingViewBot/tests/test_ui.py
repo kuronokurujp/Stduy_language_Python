@@ -7,7 +7,6 @@ import modules.ngrok.controller
 
 import app.controller
 import app.model
-from pathlib import Path
 
 
 class DummyNgrokController(modules.ngrok.interface.INgrokController):

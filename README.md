@@ -92,8 +92,7 @@ Sample Python List
         1. プロジェクトディレクトリに.python-version ファイルが作成しているかチェック
         1. .python-version ファイルは git にコミットしないように無視リストに追加
 
--   以下のコマンドで環境作成
-        -   python -m venv venv
+-   以下のコマンドで環境作成 - python -m venv venv
 
 ## 仮想環境有効
 
@@ -231,7 +230,7 @@ Sample Python List
     - pip でインストール
         - pip install pytest
 1. tests ディレクトリを作成
-    1. 作成したディレクトリに**__init__.py** を作成
+    1. 作成したディレクトリに****init**.py** を作成
         - これを作成しないと自作パッケージのインポートでうまくいかずテストが実行できない
 1. py ファイルを作成
     - test_xxx の関数を作成する
@@ -247,6 +246,17 @@ Sample Python List
 
 -   参考サイト
     -   [pytest でのインストールについて分かった](https://rurukblog.com/post/vscode-pytest/)
+
+## pip パッケージ管理環境構築
+
+### pip でインストールしたパッケージを一括で更新したりするケースがあるから
+
+1. [pip-review](https://github.com/jgonggrijp/pip-review)を利用
+    - pip でインストール
+        - pip install pip-review
+
+-   参考サイト
+    -   [Python と pip パッケージのバージョン確認＆一括アップデート方法](https://zenn.dev/haretokidoki/articles/8836fecf6b4cfc)
 
 ### pytest の collect-only コマンドからテストするように足りないパッケージを教えてくれる
 
@@ -275,9 +285,10 @@ Sample Python List
         pip install -r requirements.txt
 
 ## 単純作業をシェル or バッチファイルで自動化
-- Shellディレクトリにまとめている
-- 自動化リスト
-    - 新規開発プロジェクトを作成
+
+-   Shell ディレクトリにまとめている
+-   自動化リスト
+    -   新規開発プロジェクトを作成
 
 ## Django
 

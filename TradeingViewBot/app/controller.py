@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import app.model
+import datetime
 import traceback
 import modules.ui.view as ui_view
 import modules.ui.interface as ui_interface
@@ -19,8 +21,7 @@ import modules.broker.rrss.controller as bk_rrss_ctrl
 
 import modules.background.thread as bk_thread
 
-import datetime
-import app.model
+import pyperclip
 
 
 # TODO: アプリ制御
@@ -45,11 +46,13 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
     ) -> None:
         self.__model = model
 
+        # TODO: Ngrokの機能作成
         self.__ngrok_ctrl = self._create_ngrok_ctrl(self.__model.ngrok_model)
         self.__view_ctrl = ui_view.ViewController(
             model=self.__model.ui_model,
             event_i=self,
         )
+
         self.__logger = logger
         # TODO: 日をまたいだら実行する必要はあるかも
         # 別スレッドがいいか
@@ -268,6 +271,35 @@ class Controller(ui_interface.IUIViewEvent, bk_ctrl.ICallbackControler):
                     self.__broker_ctrls[current_st_obj.broker_type].event_orderclose(
                         close_event
                     )
+
+    # TODO: トレーディングビューのアラートURLを取得
+    def event_copy_alert_url(self, st_idx: int):
+        current_st_obj: st_obj.DataObject = self.__model.get_strategy_at(idx=st_idx)
+        # TODO: 失敗
+        if current_st_obj is None:
+            # TODO: エラー
+            raise Exception("存在しない戦略データを指定({})".format(st_idx))
+
+        # TODO: トレーディングビューのURLを生成してクリップボードでコピー
+        webhook_url = self.__ngrok_ctrl.get_url()
+        # URLに別のパスを追加することができる
+        # クエリにストラテジー情報を含める
+        webhook_url = "{}/25f4b493-85fe-11ee-92c2-7c7635fff5e0?id={}".format(
+            webhook_url, current_st_obj.id
+        )
+        pyperclip.copy(webhook_url)
+        print(webhook_url)
+
+    # TODO: アラートメッセージ
+    def event_copy_alert_message(self, st_idx: int):
+        current_st_obj: st_obj.DataObject = self.__model.get_strategy_at(idx=st_idx)
+        # TODO: 失敗
+        if current_st_obj is None:
+            # TODO: エラー
+            raise Exception("存在しない戦略データを指定({})".format(st_idx))
+
+        msg: str =  "@RRSS, @{{ticker}} で @{{strategy.order.action}} @{{strategy.order.contracts}} 約定。ポジは @{{strategy.position_size}}"
+        pyperclip.copy(msg)
 
     # TODO: エラー
     def event_error(self, type, value, trace):

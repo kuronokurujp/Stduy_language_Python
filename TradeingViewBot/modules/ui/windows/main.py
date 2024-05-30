@@ -25,6 +25,8 @@ class MainWindow(BaseWindow):
     __KEY_STRATEGY_TRADE_BUY: str = "新規買::STRATEGY_MENU"
     __KEY_STRATEGY_TRADE_SELL: str = "新規売::STRATEGY_MENU"
     __KEY_STRATEGY_TRADE_ALL_CLOSE: str = "全決済::STRATEGY_MENU"
+    __KEY_STRATEGY_COPY_ALERT_URL: str = "アラートURLをコピー::STRATEGY_MENU"
+    __KEY_STRATEGY_COPY_ALERT_MSG: str = "アラートテキストをコピー::STRATEGY_MENU"
 
     def __init__(self, title: str, size) -> None:
         super().__init__(title=title, size=size)
@@ -131,6 +133,19 @@ class MainWindow(BaseWindow):
                 if 0 < len(st_table.SelectedRows):
                     st_idx: int = st_table.SelectedRows[0]
                     event_interface.event_all_close(st_idx=st_idx)
+            # TODO: トレーディンビューのアラートURL取得
+            case self.__KEY_STRATEGY_COPY_ALERT_URL:
+                st_table: sg.Table = self._window[self.__KEY_STRATEGY_TABLE]
+                if 0 < len(st_table.SelectedRows):
+                    st_idx: int = st_table.SelectedRows[0]
+                    event_interface.event_copy_alert_url(st_idx=st_idx)
+            # TODO: トレーディングビューのアラートメッセージ取得
+            case self.__KEY_STRATEGY_COPY_ALERT_MSG:
+                st_table: sg.Table = self._window[self.__KEY_STRATEGY_TABLE]
+                if 0 < len(st_table.SelectedRows):
+                    st_idx: int = st_table.SelectedRows[0]
+                    event_interface.event_copy_alert_message(st_idx=st_idx)
+
         if (
             isinstance(event, tuple)
             and len(event) == 3
@@ -212,7 +227,7 @@ class MainWindow(BaseWindow):
         ]
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
         # テキスト色を黒にしている
-        text_color = '#000'
+        text_color = "#000"
 
         return (
             [
@@ -251,7 +266,7 @@ class MainWindow(BaseWindow):
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
 
         # テキスト色を黒にしている
-        text_color = '#000'
+        text_color = "#000"
         return (
             [
                 sg.Table(
@@ -285,6 +300,8 @@ class MainWindow(BaseWindow):
                             self.__KEY_STRATEGY_TRADE_BUY,
                             self.__KEY_STRATEGY_TRADE_SELL,
                             self.__KEY_STRATEGY_TRADE_ALL_CLOSE,
+                            self.__KEY_STRATEGY_COPY_ALERT_URL,
+                            self.__KEY_STRATEGY_COPY_ALERT_MSG,
                         ],
                     ],
                 )
@@ -308,7 +325,7 @@ class MainWindow(BaseWindow):
             "決済価格",
         ]
         # テキスト色を黒にしている
-        text_color = '#000'
+        text_color = "#000"
 
         headings = [str(headers[x]) + " .." for x in range(len(headers))]
         visible_columns: list[bool] = [
