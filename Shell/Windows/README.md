@@ -12,6 +12,12 @@
     - Python開発プロジェクトを作成
     - 開発に必要な最低元のパッケージをインストール
     - vscodeを利用した環境を作成
+    - 利用前準備
+        1. vscodeディレクトリをコピーして.vscodeに名前を変えてペースト
+        1. .vscodeディレクトリにある以下のファイルを個々人の環境に合わせて修正
+            - launch.json
+            - settings.json
+                - cornflask.linter.executablePathの項目は変更してはいけない
 
 ## 参考サイト
 - [コマンド入力と入力検証](https://web-creators-hub.com/windows/bat-set-s/)

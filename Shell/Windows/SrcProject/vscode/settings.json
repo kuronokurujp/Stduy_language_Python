@@ -1,0 +1,21 @@
+{
+    "python.venvPath": "../venv",
+    "python.pythonPath": "../venv",
+    "python.formatting.provider": "black",
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    // flake8の設定
+    // 絶対パスでないと機能しない
+    "cornflakes.linter.executablePath": "${ProjectFullPath}/venv/Scripts/flake8.exe",
+    // lintを有効
+    "python.linting.enabled": true,
+    // デフォルトのlintセーブは無効
+    "python.linting.lintOnSave": false,
+    // 初期状態のpylintは無効
+    "python.linting.pylintEnabled": false,
+    // デフォルトのflake8は無効
+    "python.linting.flake8Enabled": false,
+}
