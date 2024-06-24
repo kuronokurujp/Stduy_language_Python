@@ -159,6 +159,24 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# リポジトリでコミット禁止対象
-.vscode
-NikkeiMiniOriginalDataShaping/*
+# Djangoのメディアディレクトリは除外
+media
+
+# ログディレクトリ
+data/log/*
+
+# 非公開の設定ファイル
+data/config/ngrok.toml
+data/config/excel.toml
+
+# 非公開ツール
+tools/ngrok/*
+
+# pyenvのローカルpythonバージョン情報
+.python-version
+
+# プロジェクト固有でアップしたくないもの
+.config
+data/*
+
+Memo.txt
