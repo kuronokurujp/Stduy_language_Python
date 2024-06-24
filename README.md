@@ -47,7 +47,7 @@ Sample Python List
     -   仮想環境を動かすため PowerShell の ps ファイルを実行するものがある
     -   しかし PowerShell の環境によっては ps ファイルを実行不可能な設定なのもある
 
-        -   .\venv\Scripts\activete を実行すると以下のエラーが出た
+        -   .\venv\Scripts\activateを実行すると以下のエラーが出た
             ..\venv\Scripts\Activate.ps1 を読み込むことができません。
         -   原因 1: PowerShell の安全装置の一つであるスクリプト不許可の設定がされている
 
