@@ -15,7 +15,6 @@ SET DIR_FULLPATH=
 SET /P DIR_FULLPATH=
 IF "%DIR_FULLPATH%"=="" GOTO :INPUT_DIR_FULLPATH
 
-:INPUT_CONF_DIR_FULLPATH
 echo +-------------------------------------------------------+
 echo パスは[%DIR_FULLPATH%]でよろしいですか？
 echo Y/N
@@ -32,7 +31,6 @@ SET DIR_NAME=
 SET /P DIR_NAME=
 IF "%DIR_NAME%"=="" GOTO :INPUT_DIR_NAME
 
-:INPUT_CONF_DIR_NAME
 ECHO +-------------------------------------------------------+
 ECHO プロジェクト名は[%DIR_NAME%]でよろしいですか？
 ECHO Y/N
@@ -41,21 +39,20 @@ SET CONF_SELECT=
 SET /P CONF_SELECT=
 
 IF "%CONF_SELECT%"== SET CONF_SELECT=Y
-IF /I NOT "%CONF_SELECT%"=="Y"  GOTO :INPUT_CONF_DIR_NAME
+IF /I NOT "%CONF_SELECT%"=="Y"  GOTO :INPUT_DIR_NAME
 
+:INPUT_USE_PYTHON_VERSION
 echo pyenvでインストールしているpython一覧
 call pyenv.bat versions
 REM pyenv.batを呼び出すとUTF8文字コード設定がキャンセルされるので再設定
 chcp 65001
 
-:INPUT_USE_PYTHON_VERSION
 echo pyenvでインストールしているPythonのVersionを入力してください
 
 SET USE_PYTHON_VERSION=
 SET /P USE_PYTHON_VERSION=
 IF "%USE_PYTHON_VERSION%"=="" GOTO :INPUT_USE_PYTHON_VERSION
 
-:INPUT_CONF_DIR_NAME
 echo +-------------------------------------------------------+
 echo Pythonバージョンは[%USE_PYTHON_VERSION%]でよろしいですか？
 echo Y/N
