@@ -10,9 +10,9 @@ def get_args():
     parser = argparse.ArgumentParser(
         description="GooglePlayStoreの配信アプリのレビューを自動生成するプログラム"
     )
-    parser.add_argument("app_id", type=str, help="配信しているアプリのID")
-    parser.add_argument("lang", type=str, help="言語")
-    parser.add_argument("country", type=str, help="言語")
+    parser.add_argument("app_id", type=str, help="配信しているアプリのID", default="")
+    parser.add_argument("lang", type=str, help="言語", default="ja")
+    parser.add_argument("country", type=str, help="言語", default="jp")
     return parser.parse_args()
 
 
