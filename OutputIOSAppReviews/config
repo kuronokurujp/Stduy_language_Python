@@ -1,0 +1,4 @@
+{
+    "access_token": "YOUR_ACCESS_TOKEN", # ここにappfiguresのPersonalAccessTokenを入力してください
+    "username": "YOUR_USER_NAME" # ここにappfiguresのアカウント登録で設定したメールアドレスを入力してください
+}
