@@ -145,6 +145,20 @@ if %errorlevel% == 0 (
     exit /B -1
 )
 
+REM 不要なファイル・フォルダは削除
+if exist vscode (
+    rd /s /q vscode
+)
+
+REM エラーチェック
+REM .vscodeフォルダがないとエラーになる
+if not exist .vscode (
+    echo VSCodeの環境フォルダ.vscodeがないので失敗しました
+    rd /s /q "%PROJECT_DIR_FULLPATH%"
+    pause
+    exit /B -1
+)
+
 REM 開発環境ファイルを修正
 REM vscodeのjsonファイルではパス区切りは/にしないとだめ
 set VSCODE_PROJECT_DIR_FULLPATH=%PROJECT_DIR_FULLPATH:\=/%
