@@ -81,7 +81,6 @@ def main(
             reviews_response = make_request(
                 "/reviews", token=access_token, **query_params
             )
-            print(reviews_response.url)
             if 200 != reviews_response.status_code:
                 print(reviews_response.text)
                 break
