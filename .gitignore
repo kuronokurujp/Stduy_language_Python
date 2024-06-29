@@ -162,3 +162,5 @@ cython_debug/
 # リポジトリでコミット禁止対象
 .vscode
 NikkeiMiniOriginalDataShaping/*
+OutputTweetData/*
+
