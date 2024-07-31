@@ -165,3 +165,7 @@ media
 # pyenvのローカルpythonバージョン情報
 .python-version
 
+# プロジェクト用
+build/*
+data/*
+output/*
