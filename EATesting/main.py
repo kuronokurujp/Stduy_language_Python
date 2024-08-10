@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import traceback  # スタックトレースを表示するために追加
 import datetime
 import time
 import yfinance as yf
@@ -11,25 +12,42 @@ import backtrader.analyzers as btanalyzers
 from plotly.subplots import make_subplots
 import multiprocessing
 import modules.logics.rsi
+from tqdm.auto import tqdm
+import argparse
+
+g_pbar = None
 
 
-def EATesting():
-    # 日経225指数のティッカーシンボルを指定
-    ticker_symbol = "^N225"
+# 最適化の１処理が終わったに呼ばれるコールバック
+def OptimizerCallbacks(cb):
+    g_pbar.update()
 
-    # データを取得する期間の指定
-    start_date = "2023-01-01"
-    end_date = "2024-12-31"
 
-    # yfinanceを使用してデータをダウンロード
-    data = yf.download(ticker_symbol, start=start_date, end=end_date, period="1d")
-    # 必要なカラムのみ選択
-    data = data[["Open", "High", "Low", "Close", "Volume"]]
-    # カラム名を小文字に変換
-    data.columns = ["open", "high", "low", "close", "volume"]
+def EATesting(filePath: str = "data\\nikkei_mini\\15m.csv"):
+    if False:
+        # 日経225指数のティッカーシンボルを指定
+        ticker_symbol = "^N225"
 
-    # タイムゾーンを日本時間に変換
-    data.index = data.index.tz_localize("UTC").tz_convert("Asia/Tokyo")
+        # データを取得する期間の指定
+        start_date = "2023-01-01"
+        end_date = "2024-12-31"
+
+        # yfinanceを使用してデータをダウンロード
+        data = yf.download(ticker_symbol, start=start_date, end=end_date, period="1d")
+        # 必要なカラムのみ選択
+        data = data[["Open", "High", "Low", "Close", "Volume"]]
+        # カラム名を小文字に変換
+        data.columns = ["open", "high", "low", "close", "volume"]
+        # タイムゾーンを日本時間に変換
+        data.index = data.index.tz_localize("UTC").tz_convert("Asia/Tokyo")
+    else:
+        # CSVファイルを読み込む
+        data = pd.read_csv(filePath, parse_dates=["datetime"], index_col="datetime")
+
+        # 必要なカラムのみ選択
+        data = data[["open", "high", "low", "close", "volume"]]
+        # カラム名を小文字に変換
+        data.columns = ["open", "high", "low", "close", "volume"]
 
     # データをbacktrader用に変換
     data_bt = bt.feeds.PandasData(dataname=data)
@@ -254,7 +272,7 @@ def EATesting():
     fig.show()
 
 
-def RunOpt(cerebro):
+def RunOpt(cerebro, cpu_count: int = 1):
     # これを入れないとメモリが少なくて済む？
     # カスタムアナライザーを追加
     # 最適化だとメモリを食うので使えない
@@ -263,33 +281,38 @@ def RunOpt(cerebro):
     # 初期資金を設定
     cerebro.broker.set_cash(1000000)
     cerebro.broker.setcommission(commission=0.0)
+
     # Run over everything
-    multiprocessing.freeze_support()
-    # 利用可能なCPUコア数を取得
-    cpu_count = multiprocessing.cpu_count()
-    # CPUコア数の半分を使用
-    # return cerebro.run(maxcpus=cpu_count // 3, runonce=False, exactbars=1)
-    return cerebro.run(maxcpus=0)
+    return cerebro.run(maxcpus=cpu_count)
 
 
-def EAOpt():
-    # 日経225指数のティッカーシンボルを指定
-    ticker_symbol = "^N225"
+def EAOpt(cpu_power: str, filePath: str = "data\\nikkei_mini\\15m.csv"):
 
-    # データを取得する期間の指定
-    #    start_date = "2023-01-01"
-    start_date = "2019-01-01"
-    end_date = "2024-12-31"
+    if False:
+        # 日経225指数のティッカーシンボルを指定
+        ticker_symbol = "^N225"
 
-    # yfinanceを使用してデータをダウンロード
-    data = yf.download(ticker_symbol, start=start_date, end=end_date, period="1d")
-    # 必要なカラムのみ選択
-    data = data[["Open", "High", "Low", "Close", "Volume"]]
-    # カラム名を小文字に変換
-    data.columns = ["open", "high", "low", "close", "volume"]
+        # データを取得する期間の指定
+        #    start_date = "2023-01-01"
+        start_date = "2019-01-01"
+        end_date = "2024-12-31"
 
-    # タイムゾーンを日本時間に変換
-    data.index = data.index.tz_localize("UTC").tz_convert("Asia/Tokyo")
+        # yfinanceを使用してデータをダウンロード
+        data = yf.download(ticker_symbol, start=start_date, end=end_date, period="1d")
+        # 必要なカラムのみ選択
+        data = data[["Open", "High", "Low", "Close", "Volume"]]
+        # カラム名を小文字に変換
+        data.columns = ["open", "high", "low", "close", "volume"]
+
+        # タイムゾーンを日本時間に変換
+        data.index = data.index.tz_localize("UTC").tz_convert("Asia/Tokyo")
+    else:
+        # CSVファイルを読み込む
+        data = pd.read_csv(filePath, parse_dates=["datetime"], index_col="datetime")
+        # 必要なカラムのみ選択
+        data = data[["open", "high", "low", "close", "volume"]]
+        # カラム名を小文字に変換
+        data.columns = ["open", "high", "low", "close", "volume"]
 
     # データをbacktrader用に変換
     data_bt = bt.feeds.PandasData(dataname=data)
@@ -365,15 +388,41 @@ def EAOpt():
         * len(close_before_val)
         * len(close_after_val)
     )
-    print(total_combinations)
+    print(f"Number of Patterns({total_combinations})")
 
+    # CPUを利用数を計算
+    cpu_count: int = 1
+    cpu_max: int = multiprocessing.cpu_count()
+    # CPUコア数の半分を使用
+    if cpu_power == "low":
+        cpu_count = 1
+    elif cpu_power == "mid":
+        # 利用可能なCPUコア数を取得
+        cpu_count = int(cpu_max * 0.5)
+        if cpu_count <= 0:
+            cpu_count = 1
+    elif cpu_power == "high":
+        # 利用可能なCPUコア数を取得
+        cpu_count = int(cpu_max * 0.7)
+        if cpu_count <= 0:
+            cpu_count = 1
+    elif cpu_power == "full":
+        cpu_count = cpu_max
+    print(f"Use CpuCount({cpu_count}) / CpuMax({cpu_max})")
+
+    global g_pbar
+    g_pbar = tqdm(smoothing=0.05, desc="Optimization Runs", total=total_combinations)
     # clock the start of the process
     tstart = time.perf_counter()
 
-    results = RunOpt(cerebro)
+    cerebro.optcallback(OptimizerCallbacks)
+    results = RunOpt(cerebro, cpu_count)
 
     # clock the end of the process
     tend = time.perf_counter()
+
+    if g_pbar is not None:
+        g_pbar.close()
 
     # 最適化結果の取得
     print("==================================================")
@@ -403,5 +452,46 @@ def EAOpt():
 
 
 if __name__ == "__main__":
-    EATesting()
-    # EAOpt()
+    # 以下を入れないとexeファイルでマルチスレッド処理をした時にエラーになって動かない
+    multiprocessing.freeze_support()
+    multiprocessing.set_start_method("spawn")
+
+    # 引数パーサの作成
+    parser = argparse.ArgumentParser(description="")
+    # 解析タイプ
+    parser.add_argument("type", type=str, default="test", help="test or opt")
+    parser.add_argument("logic", type=str, default="rsi", help="logic type(rsi)")
+    # 銘柄のデータタイプ
+    parser.add_argument("data_type", type=str, default="csv", help="yahoo or csv file")
+    # 銘柄のデータタイプがcsvならcsvファイルパス指定
+    parser.add_argument("csv_filepath", type=str, default="", help="csv filepath")
+
+    # 解析タイプがOptの時のCPUパワータイプ
+    parser.add_argument(
+        "--cpu_power",
+        type=str,
+        default="mid",
+        help="opt running cpu power to low / mid / high / full",
+    )
+
+    try:
+        # 引数の解析
+        args = parser.parse_args()
+        if args.type == "test":
+            EATesting(filePath=args.csv_filepath)
+        elif args.type == "opt":
+            EAOpt(filePath=args.csv_filepath, cpu_power=args.cpu_power)
+        else:
+            raise ValueError(f"Unknown type '{args.type}' specified")
+
+    except ValueError as ve:
+        print(f"ValueError: {ve}")
+        print(traceback.format_exc())  # 詳細なスタックトレースを表示
+
+    except TypeError as te:
+        print(f"TypeError: {te}")
+        print(traceback.format_exc())  # 詳細なスタックトレースを表示
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        print(traceback.format_exc())  # 詳細なスタックトレースを表示

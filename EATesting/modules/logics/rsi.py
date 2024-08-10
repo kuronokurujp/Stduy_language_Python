@@ -97,8 +97,9 @@ class RSIStrategy(bt.Strategy):
         self.p.trades = self.p.trades + 1
 
     def stop(self):
+        self.log("Ending Value %.2f" % (self.broker.getvalue()), doprint=not self.is_optimizing)
         if not self.is_optimizing:
-            self.log("Ending Value %.2f" % (self.broker.getvalue()), doprint=True)
+            pass
         else:
             self.p.value = self.broker.getvalue()
             gc.collect()
@@ -115,14 +116,14 @@ class RSIStrategy(bt.Strategy):
                 self.log(
                     "Cancle: クロス後決済モードなのにクロス後値が入っていない",
                     None,
-                    True,
+                    doprint=not self.is_optimizing,
                 )
                 self.env.runstop()
             elif self.params.close_before_val != 0.0:
                 self.log(
                     "Cancle: クロス後決済モードなのにクロス前値が入っていたから",
                     None,
-                    True,
+                    doprint=not self.is_optimizing,
                 )
                 self.env.runstop()
         elif self.params.close_type == "クロス前":
@@ -130,14 +131,14 @@ class RSIStrategy(bt.Strategy):
                 self.log(
                     "Cancle: クロス前決済モードなのにクロス前値が入っていない",
                     None,
-                    True,
+                    doprint=not self.is_optimizing,
                 )
                 self.env.runstop()
             elif self.params.close_after_val != 0.0:
                 self.log(
                     "Cancle: クロス前決済モードなのにクロス後値が入っていたから",
                     None,
-                    True,
+                    doprint=not self.is_optimizing,
                 )
                 self.env.runstop()
         else:
@@ -145,7 +146,7 @@ class RSIStrategy(bt.Strategy):
                 self.log(
                     "Cancle: クロス決済モードなのにクロス後かクロス前の決済値が入っていたから",
                     None,
-                    True,
+                    doprint=not self.is_optimizing,
                 )
                 self.env.runstop()
 
