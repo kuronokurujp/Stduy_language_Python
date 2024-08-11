@@ -14,8 +14,19 @@ import multiprocessing
 import modules.logics.rsi
 from tqdm.auto import tqdm
 import argparse
+import tkinter as tk
+from tkinter import messagebox
 
 g_pbar = None
+
+
+def ShowAlert(title: str, msg: str):
+    # ベル音
+    print("\a")
+
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showwarning(title=title, message=msg)
 
 
 # 最適化の１処理が終わったに呼ばれるコールバック
@@ -359,12 +370,12 @@ def EAOpt(cpu_power: str, filePath: str = "data\\nikkei_mini\\15m.csv"):
     close_after_val = frange(2.5, 3.0, 0.1)
 
     # 動作確認用のパラメータ
-    #    rsi_min_period = range(6, 7, 1)
-    #    rsi_max_period = range(15, 16, 1)
-    #    rsi_blank_entry = range(10, 11, 1)
-    #    close_type = ["クロス", "クロス前", "クロス後"]
-    #    close_before_val = frange(2.5, 2.6, 0.1)
-    #    close_after_val = frange(2.5, 2.7, 0.1)
+#    rsi_min_period = range(6, 10, 1)
+#    rsi_max_period = range(15, 20, 1)
+#    rsi_blank_entry = range(10, 20, 1)
+#    close_type = ["クロス", "クロス前", "クロス後"]
+#    close_before_val = frange(2.5, 2.6, 0.1)
+#    close_after_val = frange(2.5, 2.7, 0.1)
 
     # ストラテジーの最適化を追加
     cerebro.optstrategy(
@@ -425,24 +436,24 @@ def EAOpt(cpu_power: str, filePath: str = "data\\nikkei_mini\\15m.csv"):
         g_pbar.close()
 
     # 最適化結果の取得
-    print("==================================================")
+#    print("==================================================")
     # 最適化結果の収集
-    for stratrun in results:
-        print("**************************************************")
-        for strat in stratrun:
-            print("--------------------------------------------------")
-            print(strat.p._getkwargs())
-            # 残り残金
-            print(strat.p.value)
-            # トレード回数
-            print(strat.p.trades)
-    print("==================================================")
+#    for stratrun in results:
+#        print("**************************************************")
+#        for strat in stratrun:
+#            print("--------------------------------------------------")
+#            print(strat.p._getkwargs())
+#            # 残り残金
+#            print(strat.p.value)
+#            # トレード回数
+#            print(strat.p.trades)
+#    print("==================================================")
 
-    print("Time(M) used:", str((tend - tstart) / 60))
+#    print("Time(M) used:", str((tend - tstart) / 60))
 
     # 一番高い値から10位までのリストを生成するコード
     best_results = sorted(results, key=lambda x: x[0].p.value, reverse=True)
-    top_10_results = best_results[:10]
+    top_10_results = best_results[:20]
 
     # リストの各要素の値を出力
     for result in top_10_results:
@@ -479,8 +490,10 @@ if __name__ == "__main__":
         args = parser.parse_args()
         if args.type == "test":
             EATesting(filePath=args.csv_filepath)
+            ShowAlert(title="終了", msg="テストが終わりました")
         elif args.type == "opt":
             EAOpt(filePath=args.csv_filepath, cpu_power=args.cpu_power)
+            ShowAlert(title="終了", msg="最適化が終わりました")
         else:
             raise ValueError(f"Unknown type '{args.type}' specified")
 
