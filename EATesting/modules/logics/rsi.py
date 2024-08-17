@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+from pathlib import Path
 import backtrader as bt
 import gc
 import numpy as np
 import modules.logics.logic
+import modules.common
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -293,22 +295,75 @@ class RSIStrategy(bt.Strategy):
 
 class RSILogic(modules.logics.logic.LogicBase):
 
+    def __init__(self, logic_filepath: Path) -> None:
+        super().__init__(logic_filepath)
+
     def addstrategy(self, cerebro: bt.cerebro):
         # ストラテジーをCerebroに追加
+        test_data = self.config["test"]
         cerebro.addstrategy(
             RSIStrategy,
-            rsi_min_period=8,
-            rsi_max_period=14,
-            rsi_blank_entry=10,
-            close_type="クロス前",
-            close_before_val=10.0,
-            close_after_val=0.0,
+            rsi_min_period=int(test_data["rsi_min_period"]),
+            rsi_max_period=int(test_data["rsi_max_period"]),
+            rsi_blank_entry=int(test_data["rsi_blank_entry"]),
+            close_type=str(test_data["close_type"]),
+            close_before_val=float(test_data["close_before_val"]),
+            close_after_val=float(test_data["close_after_val"]),
         )
 
         # カスタムアナライザーを追加
         cerebro.addanalyzer(RSIAnalyzer, _name="custom_analyzer")
 
-    def show(self, results, data: pd.DataFrame):
+    def optstrategy(self, cerebro: bt.cerebro) -> int:
+        opt_data = self.config["opt"]
+
+        items = opt_data["rsi_min_period"].split(",")
+        rsi_min_period: range = range(int(items[0]), int(items[1]), int(items[2]))
+
+        items = opt_data["rsi_max_period"].split(",")
+        rsi_max_period: range = range(int(items[0]), int(items[1]), int(items[2]))
+
+        items = opt_data["rsi_blank_entry"].split(",")
+        rsi_blank_entry: range = range(int(items[0]), int(items[1]), int(items[2]))
+
+        close_type = opt_data["close_types"].split(",")
+
+        items = opt_data["close_before_val"].split(",")
+        close_before_val = modules.common.frange(
+            float(items[0]), float(items[1]), float(items[2])
+        )
+
+        items = opt_data["close_before_val"].split(",")
+        close_after_val = modules.common.frange(
+            float(items[0]), float(items[1]), float(items[2])
+        )
+
+        # ストラテジーの最適化を追加
+        cerebro.optstrategy(
+            RSIStrategy,
+            rsi_min_period=rsi_min_period,
+            rsi_max_period=rsi_max_period,
+            rsi_blank_entry=rsi_blank_entry,
+            close_type=close_type,
+            close_before_val=close_before_val,
+            close_after_val=close_after_val,
+            printlog=False,
+            optimizing=True,
+        )
+
+        # 進捗管理インスタンスを作成
+        total_combinations = (
+            len(rsi_min_period)
+            * len(rsi_max_period)
+            * len(rsi_blank_entry)
+            * len(close_type)
+            * len(close_before_val)
+            * len(close_after_val)
+        )
+        print(f"Number of Patterns({total_combinations})")
+        return total_combinations
+
+    def show_test(self, results, data: pd.DataFrame):
         # カスタムアナライザーからデータを取得
         custom_analyzer = results[0].analyzers.custom_analyzer.get_analysis()
         dates = custom_analyzer["dates"]
@@ -464,3 +519,9 @@ class RSILogic(modules.logics.logic.LogicBase):
 
         # チャートの表示
         fig.show()
+
+    def show_opt(self, results, result_put_flag: bool = False):
+        opt_data = self.config["opt"]
+        super().show_opt(
+            results=results, result_put_flag=bool(opt_data["result_put_flag"])
+        )
