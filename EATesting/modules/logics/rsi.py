@@ -305,7 +305,7 @@ class RSILogic(modules.logics.logic.LogicBase):
             RSIStrategy,
             rsi_min_period=int(test_data["rsi_min_period"]),
             rsi_max_period=int(test_data["rsi_max_period"]),
-            rsi_blank_entry=int(test_data["rsi_blank_entry"]),
+            rsi_blank_entry=float(test_data["rsi_blank_entry"]),
             close_type=str(test_data["close_type"]),
             close_before_val=float(test_data["close_before_val"]),
             close_after_val=float(test_data["close_after_val"]),
@@ -324,7 +324,9 @@ class RSILogic(modules.logics.logic.LogicBase):
         rsi_max_period: range = range(int(items[0]), int(items[1]), int(items[2]))
 
         items = opt_data["rsi_blank_entry"].split(",")
-        rsi_blank_entry: range = range(int(items[0]), int(items[1]), int(items[2]))
+        rsi_blank_entry = modules.common.frange(
+            float(items[0]), float(items[1]), float(items[2])
+        )
 
         close_type = opt_data["close_types"].split(",")
 
@@ -337,6 +339,17 @@ class RSILogic(modules.logics.logic.LogicBase):
         close_after_val = modules.common.frange(
             float(items[0]), float(items[1]), float(items[2])
         )
+
+        # 進捗管理インスタンスを作成
+        total_combinations = (
+            len(rsi_min_period)
+            * len(rsi_max_period)
+            * len(rsi_blank_entry)
+            * len(close_type)
+            * len(close_before_val)
+            * len(close_after_val)
+        )
+        self.show_total_combination(total=total_combinations)
 
         # ストラテジーの最適化を追加
         cerebro.optstrategy(
@@ -351,16 +364,6 @@ class RSILogic(modules.logics.logic.LogicBase):
             optimizing=True,
         )
 
-        # 進捗管理インスタンスを作成
-        total_combinations = (
-            len(rsi_min_period)
-            * len(rsi_max_period)
-            * len(rsi_blank_entry)
-            * len(close_type)
-            * len(close_before_val)
-            * len(close_after_val)
-        )
-        print(f"Number of Patterns({total_combinations})")
         return total_combinations
 
     def show_test(self, results, data: pd.DataFrame):

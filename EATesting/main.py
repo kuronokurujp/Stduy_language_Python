@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import traceback  # スタックトレースを表示するために追加
-import time
 import yfinance as yf
 import pandas as pd
 import backtrader as bt
@@ -35,7 +34,10 @@ def OptimizerCallbacks(cb):
 
 
 def EATesting(
-    logic: modules.logics.logic.LogicBase, filePath: str = "data\\nikkei_mini\\15m.csv"
+    logic: modules.logics.logic.LogicBase,
+    file_path: str = "data\\nikkei_mini\\15m.csv",
+    start_date: pd.Timestamp = pd.Timestamp("2023-01-01"),
+    end_date: pd.Timestamp = pd.Timestamp("2024-01-01"),
 ):
     if False:
         # 日経225指数のティッカーシンボルを指定
@@ -56,8 +58,11 @@ def EATesting(
     else:
         # CSVファイルを読み込む
         data: pd.DataFrame = pd.read_csv(
-            filePath, parse_dates=["datetime"], index_col="datetime"
+            file_path, parse_dates=["datetime"], index_col="datetime"
         )
+
+        # 指定された期間でデータをフィルタリング
+        data = data[(data.index >= start_date) & (data.index < end_date)]
 
         # 必要なカラムのみ選択
         data = data[["open", "high", "low", "close", "volume"]]
@@ -99,8 +104,10 @@ def RunOpt(cerebro, cpu_count: int = 1):
 
 def EAOpt(
     logic: modules.logics.logic.LogicBase,
-    cpu_power: str,
-    filePath: str = "data\\nikkei_mini\\15m.csv",
+    cpu_count: int,
+    file_path: str = "data\\nikkei_mini\\15m.csv",
+    start_date: pd.Timestamp = pd.Timestamp("2023-01-01"),
+    end_date: pd.Timestamp = pd.Timestamp("2024-01-01"),
 ):
     if False:
         # 日経225指数のティッカーシンボルを指定
@@ -122,7 +129,9 @@ def EAOpt(
         data.index = data.index.tz_localize("UTC").tz_convert("Asia/Tokyo")
     else:
         # CSVファイルを読み込む
-        data = pd.read_csv(filePath, parse_dates=["datetime"], index_col="datetime")
+        data = pd.read_csv(file_path, parse_dates=["datetime"], index_col="datetime")
+        # 指定された期間でデータをフィルタリング
+        data = data[(data.index >= start_date) & (data.index < end_date)]
         # 必要なカラムのみ選択
         data = data[["open", "high", "low", "close", "volume"]]
         # カラム名を小文字に変換
@@ -140,23 +149,13 @@ def EAOpt(
     total_combinations: int = use_logic.optstrategy(cerebro=cerebro)
 
     # CPUを利用数を計算
-    cpu_count: int = 1
     cpu_max: int = multiprocessing.cpu_count()
-    # CPUコア数の半分を使用
-    if cpu_power == "low":
+    # CPUコア数最小・最大をチェック
+    if cpu_count <= 0:
         cpu_count = 1
-    elif cpu_power == "mid":
-        # 利用可能なCPUコア数を取得
-        cpu_count = int(cpu_max * 0.5)
-        if cpu_count <= 0:
-            cpu_count = 1
-    elif cpu_power == "high":
-        # 利用可能なCPUコア数を取得
-        cpu_count = int(cpu_max * 0.7)
-        if cpu_count <= 0:
-            cpu_count = 1
-    elif cpu_power == "full":
+    elif cpu_max < cpu_count:
         cpu_count = cpu_max
+
     print(f"Use CpuCount({cpu_count}) / CpuMax({cpu_max})")
 
     global g_pbar
@@ -196,10 +195,16 @@ if __name__ == "__main__":
 
     # 解析タイプがOptの時のCPUパワータイプ
     parser.add_argument(
-        "--cpu_power",
+        "--cpu_count",
+        type=int,
+        default=1,
+        help="opt running cpu count",
+    )
+    parser.add_argument(
+        "--start_to_end",
         type=str,
-        default="mid",
-        help="opt running cpu power to low / mid / high / full",
+        default="2023-01-01/2024-01-01",
+        help="date start to end",
     )
 
     try:
@@ -211,11 +216,27 @@ if __name__ == "__main__":
             logic_filepath=pathlib.Path(args.logic_data_filepath)
         )
 
+        # 指定された期間でデータをフィルタリング
+        dates: list[str] = str.split(args.start_to_end, "/")
+        start_date: pd.Timestamp = pd.Timestamp(dates[0])
+        end_date: pd.Timestamp = pd.Timestamp(dates[1])
+
         if args.mode == "test":
-            EATesting(logic=use_logic, filePath=args.csv_filepath)
+            EATesting(
+                logic=use_logic,
+                file_path=args.csv_filepath,
+                start_date=start_date,
+                end_date=end_date,
+            )
             ShowAlert(title="終了", msg="テストが終わりました")
         elif args.mode == "opt":
-            EAOpt(logic=use_logic, filePath=args.csv_filepath, cpu_power=args.cpu_power)
+            EAOpt(
+                logic=use_logic,
+                file_path=args.csv_filepath,
+                cpu_count=args.cpu_count,
+                start_date=start_date,
+                end_date=end_date,
+            )
             ShowAlert(title="終了", msg="最適化が終わりました")
         else:
             raise ValueError(f"Unknown type '{args.type}' specified")

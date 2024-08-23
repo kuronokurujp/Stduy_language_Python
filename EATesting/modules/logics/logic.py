@@ -15,14 +15,17 @@ class LogicBase:
         with open(logic_filepath, "r", encoding="utf-8") as configfile:
             self.config.read_file(configfile)
 
-    def addstrategy(self, cerebro: bt.cerebro) -> int:
+    def addstrategy(self, cerebro: bt.cerebro):
         pass
 
-    def optstrategy(self, cerebro: bt.cerebro):
+    def optstrategy(self, cerebro: bt.cerebro) -> int:
         pass
 
     def show_test(self, results):
         pass
+
+    def show_total_combination(self, total: int):
+        print(f"Number of Patterns({total})")
 
     def show_opt(self, results, result_put_flag: bool = False):
         # 最適化結果の取得
