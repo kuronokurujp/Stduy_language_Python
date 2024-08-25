@@ -9,6 +9,17 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+import datashader as ds
+import datashader.transfer_functions as tf
+
+# import datashader.bokeh_ext as dskb
+from bokeh.plotting import figure, output_file, show
+from bokeh.layouts import column
+from bokeh.models import RangeTool
+from bokeh.models import ColumnDataSource, CDSView, CustomJS
+from bokeh.models import BooleanFilter, HoverTool, Span
+from bokeh.models import Range1d, CrosshairTool
+
 
 # カスタムアナライザーの定義
 class RSIAnalyzer(bt.Analyzer):
@@ -366,6 +377,7 @@ class RSILogic(modules.logics.logic.LogicBase):
 
         return total_combinations
 
+    # TODO: チャートが見づらいので考える
     def show_test(self, results, data: pd.DataFrame):
         # カスタムアナライザーからデータを取得
         custom_analyzer = results[0].analyzers.custom_analyzer.get_analysis()
@@ -381,150 +393,297 @@ class RSILogic(modules.logics.logic.LogicBase):
         rsi_data = pd.DataFrame(
             {
                 "Date": dates,
+                "Open": data["open"],
+                "High": data["high"],
+                "Low": data["low"],
+                "Close": data["close"],
                 "RSI Min": rsi_min_values,
                 "RSI Max": rsi_max_values,
                 "Buy": buy_signals,
                 "Sell": sell_signals,
-                "Close": close_signals,
+                # "Close": close_signals,
             }
         )
         rsi_data["Date"] = pd.to_datetime(rsi_data["Date"])
         rsi_data.set_index("Date", inplace=True)
 
-        # Plotlyを使用してサブプロットを作成
-        fig = make_subplots(
-            rows=2,
-            cols=1,
-            shared_xaxes=True,
-            vertical_spacing=0.1,
-            subplot_titles=("Nikkei 225", "RSI Chart"),
-            row_heights=[0.7, 0.3],
-        )
-
-        # 日付を日本語形式に変換する関数
-        def format_date_japanese(date):
-            return date.strftime("%Y年%m月%d日 %H:%M")
-
-        # 日付インデックスを日本語形式の文字列に変換
-        formatted_dates = [format_date_japanese(date) for date in data.index]
-
-        # ホバーテキストを作成
-        hover_text = [
-            f"日付: {formatted_date}<br>初値: {int(open_)}<br>高値: {int(high_)}<br>安値: {int(low_)}<br>終値: {int(close_)}<br>出来高: {int(volume)}"
-            for formatted_date, open_, high_, low_, close_, volume in zip(
-                formatted_dates,
-                data["open"],
-                data["high"],
-                data["low"],
-                data["close"],
-                data["volume"],
+        if False:
+            # Plotlyを使用してサブプロットを作成
+            fig = make_subplots(
+                rows=2,
+                cols=1,
+                shared_xaxes=True,
+                vertical_spacing=0.1,
+                subplot_titles=("Nikkei 225", "RSI Chart"),
+                row_heights=[0.7, 0.3],
             )
-        ]
 
-        # ローソク足チャート
-        fig.add_trace(
-            go.Candlestick(
-                x=data.index,
-                open=data["open"],
-                high=data["high"],
-                low=data["low"],
-                close=data["close"],
-                name="",
-                hovertext="",
-                hoverinfo="text",
-                text=hover_text,
-            ),
-            row=1,
-            col=1,
-        )
+            # 日付を日本語形式に変換する関数
+            def format_date_japanese(date):
+                return date.strftime("%Y年%m月%d日 %H:%M")
 
-        # Buy, Sell, Closeシグナルをプロット
-        fig.add_trace(
-            go.Scatter(
-                x=rsi_data.index,
-                y=rsi_data["Buy"],
-                mode="markers",
-                marker=dict(color="green", symbol="triangle-up", size=10),
-                name="Buy Signal",
-            ),
-            row=1,
-            col=1,
-        )
+            # 日付インデックスを日本語形式の文字列に変換
+            formatted_dates = [format_date_japanese(date) for date in data.index]
 
-        fig.add_trace(
-            go.Scatter(
-                x=rsi_data.index,
-                y=rsi_data["Sell"],
-                mode="markers",
-                marker=dict(color="red", symbol="triangle-down", size=10),
-                name="Sell Signal",
-            ),
-            row=1,
-            col=1,
-        )
+            # ホバーテキストを作成
+            hover_text = [
+                f"日付: {formatted_date}<br>初値: {int(open_)}<br>高値: {int(high_)}<br>安値: {int(low_)}<br>終値: {int(close_)}<br>出来高: {int(volume)}"
+                for formatted_date, open_, high_, low_, close_, volume in zip(
+                    formatted_dates,
+                    data["open"],
+                    data["high"],
+                    data["low"],
+                    data["close"],
+                    data["volume"],
+                )
+            ]
 
-        fig.add_trace(
-            go.Scatter(
-                x=rsi_data.index,
-                y=rsi_data["Close"],
-                mode="markers",
-                marker=dict(color="blue", symbol="x", size=10),
-                name="Close Signal",
-            ),
-            row=1,
-            col=1,
-        )
+            # ローソク足チャート
+            fig.add_trace(
+                go.Candlestick(
+                    x=data.index,
+                    open=data["open"],
+                    high=data["high"],
+                    low=data["low"],
+                    close=data["close"],
+                    name="",
+                    hovertext="",
+                    hoverinfo="text",
+                    text=hover_text,
+                ),
+                row=1,
+                col=1,
+            )
 
-        # RSIチャート
-        fig.add_trace(
-            go.Scatter(
-                x=rsi_data.index,
-                y=rsi_data["RSI Min"],
-                mode="lines",
-                name=f"RSI Min {results[0].p.rsi_min_period}",
-            ),
-            row=2,
-            col=1,
-        )
+            # Buy, Sell, Closeシグナルをプロット
+            fig.add_trace(
+                go.Scattergl(
+                    x=rsi_data.index,
+                    y=rsi_data["Buy"],
+                    mode="markers",
+                    marker=dict(color="green", symbol="triangle-up", size=10),
+                    name="Buy Signal",
+                ),
+                row=1,
+                col=1,
+            )
 
-        fig.add_trace(
-            go.Scatter(
-                x=rsi_data.index,
-                y=rsi_data["RSI Max"],
-                mode="lines",
-                name=f"RSI Max {results[0].p.rsi_max_period}",
-            ),
-            row=2,
-            col=1,
-        )
+            fig.add_trace(
+                go.Scattergl(
+                    x=rsi_data.index,
+                    y=rsi_data["Sell"],
+                    mode="markers",
+                    marker=dict(color="red", symbol="triangle-down", size=10),
+                    name="Sell Signal",
+                ),
+                row=1,
+                col=1,
+            )
 
-        # レイアウトの設定
-        fig.update_layout(
-            title="Nikkei 225 Chart with RSIs and Trade Signals",
-            xaxis_title="",
-            yaxis_title="Price (JPY)",
-            yaxis2_title="RSI",
-            legend=dict(x=0, y=1.2, orientation="h"),
-            xaxis_rangeslider_visible=False,
-            height=800,
-        )
+            fig.add_trace(
+                go.Scattergl(
+                    x=rsi_data.index,
+                    y=rsi_data["Close"],
+                    mode="markers",
+                    marker=dict(color="blue", symbol="x", size=10),
+                    name="Close Signal",
+                ),
+                row=1,
+                col=1,
+            )
 
-        fig.update_xaxes(
-            # 日付表示を日本語に設定
-            tickformat="%Y年%m月%d日",
-            rangebreaks=[
-                # 土曜日から月曜日の範囲
-                dict(bounds=["sat", "mon"]),
-                # 他にも祝日とかあるが, 設定が手間なのでやめた
-                # なので祝日の箇所は歯抜けになってしまう
-            ],
-        )
+            # RSIチャート
+            fig.add_trace(
+                go.Scattergl(
+                    x=rsi_data.index,
+                    y=rsi_data["RSI Min"],
+                    mode="lines",
+                    name=f"RSI Min {results[0].p.rsi_min_period}",
+                ),
+                row=2,
+                col=1,
+            )
 
-        # チャートの表示
-        fig.show()
+            fig.add_trace(
+                go.Scattergl(
+                    x=rsi_data.index,
+                    y=rsi_data["RSI Max"],
+                    mode="lines",
+                    name=f"RSI Max {results[0].p.rsi_max_period}",
+                ),
+                row=2,
+                col=1,
+            )
+
+            # レイアウトの設定
+            fig.update_layout(
+                title="Nikkei 225 Chart with RSIs and Trade Signals",
+                xaxis_title="",
+                yaxis_title="Price (JPY)",
+                yaxis2_title="RSI",
+                legend=dict(x=0, y=1.2, orientation="h"),
+                height=800,
+                xaxis_rangeslider_visible=False,
+                # デフォルトのドラッグモードをズームに設定
+                dragmode="zoom",
+                updatemenus=[
+                    {
+                        "type": "buttons",
+                        "showactive": True,
+                        "buttons": [
+                            {
+                                "label": "Zoom In",
+                                "method": "relayout",
+                                "args": [
+                                    {
+                                        "xaxis.range": [
+                                            date.iloc[30],
+                                            date.iloc[70],
+                                        ]
+                                    }
+                                ],
+                            },
+                            {
+                                "label": "Zoom Out",
+                                "method": "relayout",
+                                "args": [
+                                    {
+                                        "xaxis.range": [
+                                            date.min(),
+                                            date.max(),
+                                        ]
+                                    }
+                                ],
+                            },
+                            {
+                                "label": "Reset Zoom",
+                                "method": "relayout",
+                                "args": [{"xaxis.autorange": True}],
+                            },
+                            {
+                                "label": "Pan",
+                                "method": "relayout",
+                                "args": [{"dragmode": "pan"}],
+                            },
+                            {
+                                "label": "Select",
+                                "method": "relayout",
+                                "args": [{"dragmode": "select"}],
+                            },
+                        ],
+                        "direction": "left",
+                        "pad": {"r": 10, "t": 10},
+                        "x": 0.1,
+                        "xanchor": "left",
+                        "y": 1.15,
+                        "yanchor": "top",
+                    }
+                ],
+                modebar_add=["zoom", "pan", "reset", "zoomIn", "zoomOut"],
+                modebar_remove=[
+                    "autoScale2d",
+                    "resetScale2d",
+                    "toggleSpikelines",
+                    "hoverClosestCartesian",
+                    "hoverCompareCartesian",
+                ],
+            )
+
+            fig.update_xaxes(
+                # 日付表示を日本語に設定
+                tickformat="%Y年%m月%d日",
+                rangebreaks=[
+                    # 土曜日から月曜日の範囲
+                    dict(bounds=["sat", "mon"]),
+                    # 他にも祝日とかあるが, 設定が手間なのでやめた
+                    # なので祝日の箇所は歯抜けになってしまう
+                    # TODO: 他にも日経先物miniが動いていない時間帯もぬかすようにしたい
+                ],
+                # rangeslider_visible=True,
+                rangeselector=dict(
+                    buttons=list(
+                        [
+                            dict(
+                                count=1, label="1m", step="month", stepmode="backward"
+                            ),
+                            dict(
+                                count=6, label="6m", step="month", stepmode="backward"
+                            ),
+                            dict(count=1, label="YTD", step="year", stepmode="todate"),
+                            dict(count=1, label="1y", step="year", stepmode="backward"),
+                            dict(step="all"),
+                        ]
+                    )
+                ),
+            )
+
+            # チャートの表示
+            fig.show()
+        else:
+
+            # DatashaderとBokehを使用して可視化
+
+            # キャンバスの定義
+            # cvs = ds.Canvas(plot_width=1000, plot_height=400)
+            df = rsi_data
+            source = ColumnDataSource(data=df)
+
+            # キャンドルチャートの準備
+            inc = df["Close"] > df["Open"]
+            view_inc = CDSView(filter=BooleanFilter(inc))
+            dec = df["Open"] > df["Close"]
+            view_dec = CDSView(filter=BooleanFilter(dec))
+
+            # w = 12 * 60 * 60 * 1000  # バーの幅 (ミリ秒単位)
+            # 15分足に適したバーの幅 (ミリ秒単位)
+            w = 15 * 60 * 1000  # 15分をミリ秒で表現
+
+            p = figure(
+                x_axis_type="datetime",
+                height=400,
+                width=1000,
+                sizing_mode="stretch_width",
+                title="Candlestick Chart",
+            )
+            p.segment(
+                "Date",
+                "High",
+                "Date",
+                "Low",
+                color="black",
+                source=source,
+                line_width=2,
+            )
+            p.vbar(
+                "Date",
+                w,
+                "Open",
+                "Close",
+                fill_color="red",
+                line_color="black",
+                source=source,
+                view=view_inc,
+            )
+            p.vbar(
+                "Date",
+                w,
+                "Open",
+                "Close",
+                fill_color="blue",
+                line_color="black",
+                source=source,
+                view=view_dec,
+            )
+            # Y軸の範囲設定
+            p.y_range = Range1d(df["Low"].min() * 0.95, df["High"].max() * 1.05)
+
+            # レイアウトに統合
+            layout = column(p)
+            show(layout)
 
     def show_opt(self, results, result_put_flag: bool = False):
         opt_data = self.config["opt"]
+        b: bool = bool(opt_data["result_put_flag"] == "True")
         super().show_opt(
-            results=results, result_put_flag=bool(opt_data["result_put_flag"])
+            results=results, result_put_flag=b
         )

@@ -25,7 +25,7 @@ class LogicBase:
         pass
 
     def show_total_combination(self, total: int):
-        print(f"Number of Patterns({total})")
+        print(f"検証回数({total})")
 
     def show_opt(self, results, result_put_flag: bool = False):
         # 最適化結果の取得
@@ -45,6 +45,8 @@ class LogicBase:
 
         # トレードをしていないパラメータは除外する
         best_results = [result for result in results if result[0].p.trades > 0]
+        if len(best_results) <= 0:
+            print("トレードを一度もしていない結果しかなかった")
 
         # 一番高い結果から降順にソート
         best_results = sorted(best_results, key=lambda x: x[0].p.value, reverse=True)
@@ -54,6 +56,6 @@ class LogicBase:
 
         # リストの各要素の値を出力
         for result in top_20_results:
-            print("Value: ", result[0].p.value)
-            print("TradeCount: ", result[0].p.trades)
-            print("Prams: ", result[0].p._getkwargs())
+            print("資金: ", result[0].p.value)
+            print("トレード回数: ", result[0].p.trades)
+            print("パラメータ: ", result[0].p._getkwargs())

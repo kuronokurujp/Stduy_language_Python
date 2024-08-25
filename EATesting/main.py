@@ -156,10 +156,10 @@ def EAOpt(
     elif cpu_max < cpu_count:
         cpu_count = cpu_max
 
-    print(f"Use CpuCount({cpu_count}) / CpuMax({cpu_max})")
+    print(f"使用するCPUコア数は({cpu_count}) / CPUコア最大数は({cpu_max})")
 
     global g_pbar
-    g_pbar = tqdm(smoothing=0.05, desc="Optimization Runs", total=total_combinations)
+    g_pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total_combinations)
 
     cerebro.optcallback(OptimizerCallbacks)
     results = RunOpt(cerebro, cpu_count)
