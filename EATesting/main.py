@@ -16,10 +16,24 @@ import argparse
 import tkinter as tk
 from tkinter import messagebox
 
+import time
+import psutil
+
 g_pbar = None
 
 
-def ShowAlert(title: str, msg: str):
+def limit_cpu_usage(max_usage=10):
+    """
+    Monitor and limit CPU usage of the current process.
+    max_usage: int, Maximum CPU usage percentage (0-100).
+    """
+    while True:
+        cpu_usage = psutil.cpu_percent(interval=1)
+        if cpu_usage > max_usage:
+            time.sleep(1)
+
+
+def show_alert(title: str, msg: str):
     # ベル音
     print("\a")
 
@@ -206,7 +220,14 @@ if __name__ == "__main__":
         default="2023-01-01/2024-01-01",
         help="date start to end",
     )
+    parser.add_argument(
+        "--cpu_power_rate",
+        type=int,
+        default=100,
+        help="cpu power rate",
+    )
 
+    monitor_process = None
     try:
         # 引数の解析
         args = parser.parse_args()
@@ -228,8 +249,17 @@ if __name__ == "__main__":
                 start_date=start_date,
                 end_date=end_date,
             )
-            ShowAlert(title="終了", msg="テストが終わりました")
+            show_alert(title="終了", msg="テストが終わりました")
         elif args.mode == "opt":
+            """
+            Run the backtrader strategy with limited CPU usage.
+            """
+            # Start a separate process for CPU monitoring
+            monitor_process = multiprocessing.Process(
+                target=limit_cpu_usage, args=(args.cpu_power_rate,)
+            )
+
+            monitor_process.start()
             EAOpt(
                 logic=use_logic,
                 file_path=args.csv_filepath,
@@ -237,7 +267,7 @@ if __name__ == "__main__":
                 start_date=start_date,
                 end_date=end_date,
             )
-            ShowAlert(title="終了", msg="最適化が終わりました")
+            show_alert(title="終了", msg="最適化が終わりました")
         else:
             raise ValueError(f"Unknown type '{args.type}' specified")
 
@@ -252,3 +282,8 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         print(traceback.format_exc())  # 詳細なスタックトレースを表示
+    finally:
+        if monitor_process is not None:
+            # Make sure to terminate the monitoring process
+            monitor_process.terminate()
+            monitor_process.join()
