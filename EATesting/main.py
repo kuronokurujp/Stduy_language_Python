@@ -1,11 +1,24 @@
 #!/usr/bin/env python
 import traceback  # スタックトレースを表示するために追加
-import yfinance as yf
+
+# from bokeh.models import DatetimeTickFormatter
+# import hvplot.pandas
+import holoviews as hv
+import hvplot.pandas  # hvplotを使用するために必要
+from bokeh.models import HoverTool
+
+hv.extension("bokeh")
+
+# 日本の祝日を考慮するため
+import jpholiday
+
+# import yfinance as yf
 import pandas as pd
 import backtrader as bt
 from tqdm import tqdm
 import pathlib
 
+import numpy as np
 import multiprocessing
 
 # EAロジッククラス
@@ -17,9 +30,42 @@ import tkinter as tk
 from tkinter import messagebox
 
 import time
-import psutil
+
+# import psutil
 
 g_pbar = None
+
+# import pygal
+# import backtrader as bt
+
+import holoviews as hv
+import hvplot.pandas
+from bokeh.resources import INLINE
+
+# from holoviews.plotting.bokeh import BokehRenderer
+
+
+# Backtraderのplotをオーバーライドするクラス
+# これ各ロジック毎に用意する？
+class PygalPlotter:
+    def __init__(self):
+        pass
+
+    def plot(self, strategy, *args, **kwargs):
+        # データを収集
+        data = strategy.datas[0]
+        data_dates = [bt.utils.date.num2date(date) for date in data.datetime.array]
+        data_close = data.close.array
+
+        # Pygalでプロット
+        # line_chart = pygal.Line(title="Backtrader with Pygal", x_label_rotation=20)
+        # line_chart.x_labels = map(str, data_dates)
+        # line_chart.add("Close", data_close)
+        # line_chart.render_to_file("backtrader_pygal_chart.svg")
+
+    def show(self):
+        # PygalはSVGファイルに出力するため、このメソッドでは何もしない
+        pass
 
 
 def limit_cpu_usage(max_usage=10):
@@ -52,6 +98,7 @@ def EATesting(
     file_path: str = "data\\nikkei_mini\\15m.csv",
     start_date: pd.Timestamp = pd.Timestamp("2023-01-01"),
     end_date: pd.Timestamp = pd.Timestamp("2024-01-01"),
+    leverage: float = 1.0,
 ):
     if False:
         # 日経225指数のティッカーシンボルを指定
@@ -91,26 +138,125 @@ def EATesting(
     # データをCerebroに追加
     cerebro.adddata(data_bt)
 
+    # 初期資金を設定
+    cerebro.broker.set_cash(1000000)
+    # レバレッジを変える
+    # commisionは手数料
+    cerebro.broker.setcommission(commission=0)
+
+    # ポジジョンサイズを変える事でレバレッジを変える
+    cerebro.addsizer(bt.sizers.FixedSize, stake=leverage)
+
     # ストラテジーをCerebroに追加
     logic.addstrategy(cerebro)
 
-    # 初期資金を設定
-    cerebro.broker.set_cash(1000000)
-
+    # pygal_plotter = PygalPlotter()
     # バックテストの実行
-    results = cerebro.run()
-    logic.show_test(results=results, data=data)
+    strategies = cerebro.run()
+    # カスタムプロッターを使用してプロット
+    # cerebro.plot(plotter=pygal_plotter)
+    # cerebro.plot()
+    # logic.show_test(results=results, data=data)
+    # cerebro.plot(style="candle")
+    strategy = strategies[0]
+
+    # インディケータの値と日時の取得
+    # rsi_values = np.array(strategy.rsi_values)
+    dates = np.array(strategy.dates)
+    close_values = np.array(strategy.close_values)
+    open_values = np.array(strategy.open_values)
+    high_values = np.array(strategy.high_values)
+    low_values = np.array(strategy.low_values)
+
+    # データフレームの作成
+    data = pd.DataFrame(
+        {
+            "datetime": dates,
+            "close": close_values,
+            "open": open_values,
+            "high": high_values,
+            "low": low_values,
+        }
+    )
+
+    # 土日祝日を除いたデータのみを残す
+    business_days = data["datetime"].index[
+        data["datetime"].apply(
+            lambda x: x.weekday() < 5 and not jpholiday.is_holiday(x)
+        )
+    ]
+
+    # 営業日のみを使ったデータフレームを作成
+    filtered_data = data.loc[business_days]
+
+    # 整数のインデックスを作成し、指定した間隔で増加
+    filtered_data = filtered_data.reset_index(drop=True)
+    filtered_data["index"] = range(len(filtered_data))
+
+    # ローソク足のtooltip情報に日付を入れる
+    hover = HoverTool(
+        tooltips=[
+            ("Date", "@{datetime}{%Y-%m-%d %H:%M}"),
+            ("Open", "@open{0.2f}"),
+            ("High", "@high{0.2f}"),
+            ("Low", "@low{0.2f}"),
+            ("Close", "@close{0.2f}"),
+        ],
+        formatters={
+            "@{datetime}": "datetime",
+        },
+        mode="vline",
+    )
+
+    # ローソク足チャートの描画（hvplotを使用）
+    candlestick = filtered_data.hvplot.ohlc(
+        x="index",
+        y=["open", "high", "low", "close"],
+        hover_cols=["datetime"],
+        tools=[hover, "pan", "wheel_zoom", "box_zoom", "reset"],
+        grid=True,
+        width=1200,
+        height=400,
+        neg_color="indianred",
+        pos_color="chartreuse",
+        line_color="gray",
+        bar_width=1.0,
+    )
+
+    # ラベルの間隔をデータ量に応じて計算
+    label_interval = max(1, len(filtered_data) // 300)
+
+    # xticks を設定：ティックの位置は数値/ラベルは日付
+    xticks = [
+        (filtered_data["index"][i], filtered_data["datetime"][i])
+        for i in range(0, len(filtered_data), label_interval)
+    ]
+
+    xLen = min(800, len(filtered_data))
+    candlestick = candlestick.opts(
+        xlabel="",
+        # ラベルが重ならないように角度をつける
+        xrotation=45,
+        xticks=xticks,
+        show_grid=True,
+        # x軸の範囲を調整することで横のスケールを調整できる
+        xlim=(0, xLen),
+    )
+
+    hvplot.save(candlestick, "data\\test\\holoviews_datashader_candlestick.html")
+
+    print(
+        "チャートを 'backtrader_datashader_chart.html' に保存しました。Webブラウザで開いてください。"
+    )
 
 
-def RunOpt(cerebro, cpu_count: int = 1):
-    # これを入れないとメモリが少なくて済む？
-    # カスタムアナライザーを追加
-    # 最適化だとメモリを食うので使えない
-    # cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="trade_analyzer")
-
+def RunOpt(cerebro, cpu_count: int = 1, leverage: float = 1.0):
     # 初期資金を設定
     cerebro.broker.set_cash(1000000)
     cerebro.broker.setcommission(commission=0.0)
+
+    # ポジジョンサイズを変える事でレバレッジを変える
+    cerebro.addsizer(bt.sizers.FixedSize, stake=leverage)
 
     # Run over everything
     return cerebro.run(maxcpus=cpu_count)
@@ -122,6 +268,7 @@ def EAOpt(
     file_path: str = "data\\nikkei_mini\\15m.csv",
     start_date: pd.Timestamp = pd.Timestamp("2023-01-01"),
     end_date: pd.Timestamp = pd.Timestamp("2024-01-01"),
+    leverage: float = 1.0,
 ):
     if False:
         # 日経225指数のティッカーシンボルを指定
@@ -176,7 +323,7 @@ def EAOpt(
     g_pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total_combinations)
 
     cerebro.optcallback(OptimizerCallbacks)
-    results = RunOpt(cerebro, cpu_count)
+    results = RunOpt(cerebro, cpu_count, leverage=leverage)
 
     if g_pbar is not None:
         g_pbar.close()
@@ -218,14 +365,17 @@ if __name__ == "__main__":
         "--start_to_end",
         type=str,
         default="2023-01-01/2024-01-01",
-        help="date start to end",
+        help="取引の開始と終わりの日付",
     )
+    # CPUパワーリミット%
     parser.add_argument(
-        "--cpu_power_rate",
+        "--cpu_limit_power_percent",
         type=int,
         default=100,
-        help="cpu power rate",
+        help="",
     )
+    # 取引のレバレッジ
+    parser.add_argument("--leverage", type=float, default=1.0, help="取引のレバレッジ")
 
     monitor_process = None
     try:
@@ -248,24 +398,28 @@ if __name__ == "__main__":
                 file_path=args.csv_filepath,
                 start_date=start_date,
                 end_date=end_date,
+                leverage=args.leverage,
             )
             show_alert(title="終了", msg="テストが終わりました")
         elif args.mode == "opt":
             """
             Run the backtrader strategy with limited CPU usage.
             """
-            # Start a separate process for CPU monitoring
-            monitor_process = multiprocessing.Process(
-                target=limit_cpu_usage, args=(args.cpu_power_rate,)
-            )
+            # CPUパワーの制限%があれば制限処理のスレッドを起動
+            if args.cpu_limit_power_percent < 100:
+                monitor_process = multiprocessing.Process(
+                    target=limit_cpu_usage, args=(args.cpu_limit_power_percent,)
+                )
 
-            monitor_process.start()
+                monitor_process.start()
+
             EAOpt(
                 logic=use_logic,
                 file_path=args.csv_filepath,
                 cpu_count=args.cpu_count,
                 start_date=start_date,
                 end_date=end_date,
+                leverage=args.leverage,
             )
             show_alert(title="終了", msg="最適化が終わりました")
         else:
@@ -273,15 +427,16 @@ if __name__ == "__main__":
 
     except ValueError as ve:
         print(f"ValueError: {ve}")
-        print(traceback.format_exc())  # 詳細なスタックトレースを表示
+        print(traceback.format_exc())
 
     except TypeError as te:
         print(f"TypeError: {te}")
-        print(traceback.format_exc())  # 詳細なスタックトレースを表示
+        print(traceback.format_exc())
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        print(traceback.format_exc())  # 詳細なスタックトレースを表示
+        print(traceback.format_exc())
+
     finally:
         if monitor_process is not None:
             # Make sure to terminate the monitoring process

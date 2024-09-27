@@ -6,8 +6,8 @@ import numpy as np
 import modules.logics.logic
 import modules.common
 import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+# import plotly.graph_objects as go
+# from plotly.subplots import make_subplots
 
 import datashader as ds
 import datashader.transfer_functions as tf
@@ -110,6 +110,13 @@ class RSIStrategy(bt.Strategy):
             self.buy_signal = np.nan
             self.sell_signal = np.nan
             self.close_signal = np.nan
+            self.trade_log = []  # 取引履歴を記録
+            self.rsi_values = []  # RSIの値を保存するリスト
+            self.dates = []  # 日時を保存するリスト
+            self.close_values = []  # 終値を保存するリスト
+            self.open_values = []  # 終値を保存するリスト
+            self.high_values = []  # 終値を保存するリスト
+            self.low_values = []  # 終値を保存するリスト
 
     def notify_order(self, order):
         if order.status in [order.Submitted, order.Accepted]:
@@ -125,6 +132,13 @@ class RSIStrategy(bt.Strategy):
                         order.executed.comm,
                     )
                 )
+                self.trade_log.append(
+                    {
+                        "datetime": self.datas[0].datetime.datetime(0),
+                        "price": self.data_close[0],
+                        "action": "buy",
+                    }
+                )
 
                 self.buyprice = order.executed.price
                 self.buycomm = order.executed.comm
@@ -137,6 +151,13 @@ class RSIStrategy(bt.Strategy):
                         order.executed.value,
                         order.executed.comm,
                     )
+                )
+                self.trade_log.append(
+                    {
+                        "datetime": self.datas[0].datetime.datetime(0),
+                        "price": self.data_close[0],
+                        "action": "sell",
+                    }
                 )
 
             self.bar_executed = len(self)
@@ -167,6 +188,14 @@ class RSIStrategy(bt.Strategy):
     def next(self):
         rsi_min_value = self.rsi_min[0]
         rsi_max_value = self.rsi_max[0]
+
+        # RSIの値、日時、終値を保存
+        self.rsi_values.append(rsi_min_value)
+        self.dates.append(self.datas[0].datetime.datetime(0))
+        self.close_values.append(self.data_close[0])
+        self.open_values.append(self.data_open[0])
+        self.high_values.append(self.data_high[0])
+        self.low_values.append(self.data_low[0])
 
         # パラメータによってキャンセルする
         # クロス後の決済なのにクロス前の値が入っているのはおかしい
@@ -379,6 +408,8 @@ class RSILogic(modules.logics.logic.LogicBase):
 
     # TODO: チャートが見づらいので考える
     def show_test(self, results, data: pd.DataFrame):
+        return
+
         # カスタムアナライザーからデータを取得
         custom_analyzer = results[0].analyzers.custom_analyzer.get_analysis()
         dates = custom_analyzer["dates"]
@@ -684,6 +715,4 @@ class RSILogic(modules.logics.logic.LogicBase):
     def show_opt(self, results, result_put_flag: bool = False):
         opt_data = self.config["opt"]
         b: bool = bool(opt_data["result_put_flag"] == "True")
-        super().show_opt(
-            results=results, result_put_flag=b
-        )
+        super().show_opt(results=results, result_put_flag=b)
