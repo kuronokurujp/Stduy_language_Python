@@ -205,7 +205,6 @@ def EATesting(
         formatters={
             "@{datetime}": "datetime",
         },
-        mode="vline",
     )
 
     # ローソク足チャートの描画（hvplotを使用）
