@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+import modules.logics.logic_interface as logic_interface
+import modules.trade.engine_interface as trade_intarface
+
 import backtrader as bt
 import pathlib
 import configparser
 
 
 # ロジックの基本クラス
-class LogicBase:
+class LogicBase(logic_interface.ilogic):
     # ConfigParserオブジェクトを作成
     config = configparser.ConfigParser()
 
@@ -15,10 +18,16 @@ class LogicBase:
         with open(logic_filepath, "r", encoding="utf-8") as configfile:
             self.config.read_file(configfile)
 
-    def addstrategy(self, cerebro: bt.cerebro):
+    def attach_test_strategy(self, trade_engine: trade_intarface.iengine) -> None:
+        self._addstrategy(trade_engine.cerebro)
+
+    def attach_opt_strategy(self, trade_engine: trade_intarface.iengine) -> int:
+        return self._optstrategy(trade_engine.cerebro)
+
+    def _addstrategy(self, cerebro: bt.cerebro):
         pass
 
-    def optstrategy(self, cerebro: bt.cerebro) -> int:
+    def _optstrategy(self, cerebro: bt.cerebro) -> int:
         pass
 
     def show_test(self, results):

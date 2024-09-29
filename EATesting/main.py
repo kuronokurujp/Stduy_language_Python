@@ -1,29 +1,26 @@
 #!/usr/bin/env python
-import traceback  # スタックトレースを表示するために追加
+# スタックトレースを表示するために追加
+import traceback
 
-# from bokeh.models import DatetimeTickFormatter
-# import hvplot.pandas
-import holoviews as hv
-import hvplot.pandas  # hvplotを使用するために必要
-from bokeh.models import HoverTool
-
-hv.extension("bokeh")
-
-# 日本の祝日を考慮するため
-import jpholiday
-
-# import yfinance as yf
 import pandas as pd
 import backtrader as bt
 from tqdm import tqdm
 import pathlib
 
-import numpy as np
 import multiprocessing
 
 # EAロジッククラス
 import modules.logics.rsi
-import modules.logics.logic
+import modules.logics.backtrader_logic
+
+# チャートモデルクラス
+import modules.chart.csv_model
+import modules.chart.model_intareface
+
+# トレードエンジン
+import modules.trade.backtrader_engine
+import modules.trade.engine_interface
+
 
 import argparse
 import tkinter as tk
@@ -31,18 +28,9 @@ from tkinter import messagebox
 
 import time
 
-# import psutil
-
 g_pbar = None
 
 # import pygal
-# import backtrader as bt
-
-import holoviews as hv
-import hvplot.pandas
-from bokeh.resources import INLINE
-
-# from holoviews.plotting.bokeh import BokehRenderer
 
 
 # Backtraderのplotをオーバーライドするクラス
@@ -93,162 +81,6 @@ def OptimizerCallbacks(cb):
     g_pbar.update()
 
 
-def EATesting(
-    logic: modules.logics.logic.LogicBase,
-    file_path: str = "data\\nikkei_mini\\15m.csv",
-    start_date: pd.Timestamp = pd.Timestamp("2023-01-01"),
-    end_date: pd.Timestamp = pd.Timestamp("2024-01-01"),
-    leverage: float = 1.0,
-):
-    if False:
-        # 日経225指数のティッカーシンボルを指定
-        ticker_symbol = "^N225"
-
-        # データを取得する期間の指定
-        start_date = "2023-01-01"
-        end_date = "2024-12-31"
-
-        # yfinanceを使用してデータをダウンロード
-        data = yf.download(ticker_symbol, start=start_date, end=end_date, period="1d")
-        # 必要なカラムのみ選択
-        data = data[["Open", "High", "Low", "Close", "Volume"]]
-        # カラム名を小文字に変換
-        data.columns = ["open", "high", "low", "close", "volume"]
-        # タイムゾーンを日本時間に変換
-        data.index = data.index.tz_localize("UTC").tz_convert("Asia/Tokyo")
-    else:
-        # CSVファイルを読み込む
-        data: pd.DataFrame = pd.read_csv(
-            file_path, parse_dates=["datetime"], index_col="datetime"
-        )
-
-        # 指定された期間でデータをフィルタリング
-        data = data[(data.index >= start_date) & (data.index < end_date)]
-
-        # 必要なカラムのみ選択
-        data = data[["open", "high", "low", "close", "volume"]]
-        # カラム名を小文字に変換
-        data.columns = ["open", "high", "low", "close", "volume"]
-
-    # データをbacktrader用に変換
-    data_bt = bt.feeds.PandasData(dataname=data)
-
-    # Cerebroの初期化
-    cerebro: bt.Cerebro = bt.Cerebro()
-    # データをCerebroに追加
-    cerebro.adddata(data_bt)
-
-    # 初期資金を設定
-    cerebro.broker.set_cash(1000000)
-    # レバレッジを変える
-    # commisionは手数料
-    cerebro.broker.setcommission(commission=0)
-
-    # ポジジョンサイズを変える事でレバレッジを変える
-    cerebro.addsizer(bt.sizers.FixedSize, stake=leverage)
-
-    # ストラテジーをCerebroに追加
-    logic.addstrategy(cerebro)
-
-    # pygal_plotter = PygalPlotter()
-    # バックテストの実行
-    strategies = cerebro.run()
-    # カスタムプロッターを使用してプロット
-    # cerebro.plot(plotter=pygal_plotter)
-    # cerebro.plot()
-    # logic.show_test(results=results, data=data)
-    # cerebro.plot(style="candle")
-    strategy = strategies[0]
-
-    # インディケータの値と日時の取得
-    # rsi_values = np.array(strategy.rsi_values)
-    dates = np.array(strategy.dates)
-    close_values = np.array(strategy.close_values)
-    open_values = np.array(strategy.open_values)
-    high_values = np.array(strategy.high_values)
-    low_values = np.array(strategy.low_values)
-
-    # データフレームの作成
-    data = pd.DataFrame(
-        {
-            "datetime": dates,
-            "close": close_values,
-            "open": open_values,
-            "high": high_values,
-            "low": low_values,
-        }
-    )
-
-    # 土日祝日を除いたデータのみを残す
-    business_days = data["datetime"].index[
-        data["datetime"].apply(
-            lambda x: x.weekday() < 5 and not jpholiday.is_holiday(x)
-        )
-    ]
-
-    # 営業日のみを使ったデータフレームを作成
-    filtered_data = data.loc[business_days]
-
-    # 整数のインデックスを作成し、指定した間隔で増加
-    filtered_data = filtered_data.reset_index(drop=True)
-    filtered_data["index"] = range(len(filtered_data))
-
-    # ローソク足のtooltip情報に日付を入れる
-    hover = HoverTool(
-        tooltips=[
-            ("Date", "@{datetime}{%Y-%m-%d %H:%M}"),
-            ("Open", "@open{0.2f}"),
-            ("High", "@high{0.2f}"),
-            ("Low", "@low{0.2f}"),
-            ("Close", "@close{0.2f}"),
-        ],
-        formatters={
-            "@{datetime}": "datetime",
-        },
-    )
-
-    # ローソク足チャートの描画（hvplotを使用）
-    candlestick = filtered_data.hvplot.ohlc(
-        x="index",
-        y=["open", "high", "low", "close"],
-        hover_cols=["datetime"],
-        tools=[hover, "pan", "wheel_zoom", "box_zoom", "reset"],
-        grid=True,
-        width=1200,
-        height=400,
-        neg_color="indianred",
-        pos_color="chartreuse",
-        line_color="gray",
-        bar_width=1.0,
-    )
-
-    # ラベルの間隔をデータ量に応じて計算
-    label_interval = max(1, len(filtered_data) // 300)
-
-    # xticks を設定：ティックの位置は数値/ラベルは日付
-    xticks = [
-        (filtered_data["index"][i], filtered_data["datetime"][i])
-        for i in range(0, len(filtered_data), label_interval)
-    ]
-
-    xLen = min(800, len(filtered_data))
-    candlestick = candlestick.opts(
-        xlabel="",
-        # ラベルが重ならないように角度をつける
-        xrotation=45,
-        xticks=xticks,
-        show_grid=True,
-        # x軸の範囲を調整することで横のスケールを調整できる
-        xlim=(0, xLen),
-    )
-
-    hvplot.save(candlestick, "data\\test\\holoviews_datashader_candlestick.html")
-
-    print(
-        "チャートを 'backtrader_datashader_chart.html' に保存しました。Webブラウザで開いてください。"
-    )
-
-
 def RunOpt(cerebro, cpu_count: int = 1, leverage: float = 1.0):
     # 初期資金を設定
     cerebro.broker.set_cash(1000000)
@@ -262,43 +94,13 @@ def RunOpt(cerebro, cpu_count: int = 1, leverage: float = 1.0):
 
 
 def EAOpt(
-    logic: modules.logics.logic.LogicBase,
+    use_logic: modules.logics.backtrader_logic.LogicBase,
+    chart_model: modules.chart.model_intareface.imodel,
     cpu_count: int,
-    file_path: str = "data\\nikkei_mini\\15m.csv",
-    start_date: pd.Timestamp = pd.Timestamp("2023-01-01"),
-    end_date: pd.Timestamp = pd.Timestamp("2024-01-01"),
     leverage: float = 1.0,
 ):
-    if False:
-        # 日経225指数のティッカーシンボルを指定
-        ticker_symbol = "^N225"
-
-        # データを取得する期間の指定
-        #    start_date = "2023-01-01"
-        start_date = "2019-01-01"
-        end_date = "2024-12-31"
-
-        # yfinanceを使用してデータをダウンロード
-        data = yf.download(ticker_symbol, start=start_date, end=end_date, period="1d")
-        # 必要なカラムのみ選択
-        data = data[["Open", "High", "Low", "Close", "Volume"]]
-        # カラム名を小文字に変換
-        data.columns = ["open", "high", "low", "close", "volume"]
-
-        # タイムゾーンを日本時間に変換
-        data.index = data.index.tz_localize("UTC").tz_convert("Asia/Tokyo")
-    else:
-        # CSVファイルを読み込む
-        data = pd.read_csv(file_path, parse_dates=["datetime"], index_col="datetime")
-        # 指定された期間でデータをフィルタリング
-        data = data[(data.index >= start_date) & (data.index < end_date)]
-        # 必要なカラムのみ選択
-        data = data[["open", "high", "low", "close", "volume"]]
-        # カラム名を小文字に変換
-        data.columns = ["open", "high", "low", "close", "volume"]
-
     # データをbacktrader用に変換
-    data_bt = bt.feeds.PandasData(dataname=data)
+    data_bt = chart_model.prices_format_backtrader()
 
     # Cerebroの初期化
     cerebro = bt.Cerebro()
@@ -306,7 +108,7 @@ def EAOpt(
     # データをCerebroに追加
     cerebro.adddata(data_bt)
 
-    total_combinations: int = use_logic.optstrategy(cerebro=cerebro)
+    total_combinations: int = use_logic._optstrategy(cerebro=cerebro)
 
     # CPUを利用数を計算
     cpu_max: int = multiprocessing.cpu_count()
@@ -391,13 +193,30 @@ if __name__ == "__main__":
         start_date: pd.Timestamp = pd.Timestamp(dates[0])
         end_date: pd.Timestamp = pd.Timestamp(dates[1])
 
-        if args.mode == "test":
-            EATesting(
-                logic=use_logic,
-                file_path=args.csv_filepath,
-                start_date=start_date,
-                end_date=end_date,
+        #  チャートモデルを作成
+        chart_model: modules.chart.model_intareface.imodel = (
+            modules.chart.csv_model.model(
+                args.csv_filepath,
+            )
+        )
+        chart_model.load(start_date=start_date, end_date=end_date)
+
+        trade_engine: modules.trade.engine_interface.iengine = (
+            modules.trade.backtrader_engine.engine(
                 leverage=args.leverage,
+                b_opt=args.mode == "opt",
+                cpu_count=args.cpu_count,
+            )
+        )
+
+        if args.mode == "test":
+            # トレードテスト開始
+            trade_engine.run(use_logic, chart_model=chart_model)
+            # トレードテスト結果をチャートファイルで保存
+            trade_engine.save_file(
+                filepath=pathlib.Path(
+                    "data\\test\\holoviews_datashader_candlestick.html"
+                )
             )
             show_alert(title="終了", msg="テストが終わりました")
         elif args.mode == "opt":
@@ -414,10 +233,8 @@ if __name__ == "__main__":
 
             EAOpt(
                 logic=use_logic,
-                file_path=args.csv_filepath,
+                chart_model=chart_model,
                 cpu_count=args.cpu_count,
-                start_date=start_date,
-                end_date=end_date,
                 leverage=args.leverage,
             )
             show_alert(title="終了", msg="最適化が終わりました")

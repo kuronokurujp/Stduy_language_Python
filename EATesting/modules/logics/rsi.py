@@ -3,7 +3,7 @@ from pathlib import Path
 import backtrader as bt
 import gc
 import numpy as np
-import modules.logics.logic
+import modules.logics.backtrader_logic
 import modules.common
 import pandas as pd
 # import plotly.graph_objects as go
@@ -333,12 +333,12 @@ class RSIStrategy(bt.Strategy):
                     )
 
 
-class RSILogic(modules.logics.logic.LogicBase):
+class RSILogic(modules.logics.backtrader_logic.LogicBase):
 
     def __init__(self, logic_filepath: Path) -> None:
         super().__init__(logic_filepath)
 
-    def addstrategy(self, cerebro: bt.cerebro):
+    def _addstrategy(self, cerebro: bt.cerebro):
         # ストラテジーをCerebroに追加
         test_data = self.config["test"]
         cerebro.addstrategy(
@@ -354,7 +354,7 @@ class RSILogic(modules.logics.logic.LogicBase):
         # カスタムアナライザーを追加
         cerebro.addanalyzer(RSIAnalyzer, _name="custom_analyzer")
 
-    def optstrategy(self, cerebro: bt.cerebro) -> int:
+    def _optstrategy(self, cerebro: bt.cerebro) -> int:
         opt_data = self.config["opt"]
 
         items = opt_data["rsi_min_period"].split(",")
