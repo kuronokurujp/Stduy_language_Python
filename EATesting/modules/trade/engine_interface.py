@@ -5,10 +5,10 @@ import modules.chart.model_intareface as chart_interface
 import modules.logics.logic_interface as logic_interface
 
 
-class iengine(metaclass=abc.ABCMeta):
+class IEngine(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, logic: logic_interface, chart_model: chart_interface.imodel) -> None:
+    def run(self, logic: logic_interface, chart_model: chart_interface.IModel) -> None:
         return NotImplementedError()
 
     @abc.abstractmethod

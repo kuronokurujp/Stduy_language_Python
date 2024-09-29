@@ -95,7 +95,7 @@ def RunOpt(cerebro, cpu_count: int = 1, leverage: float = 1.0):
 
 def EAOpt(
     use_logic: modules.logics.backtrader_logic.LogicBase,
-    chart_model: modules.chart.model_intareface.imodel,
+    chart_model: modules.chart.model_intareface.IModel,
     cpu_count: int,
     leverage: float = 1.0,
 ):
@@ -194,15 +194,15 @@ if __name__ == "__main__":
         end_date: pd.Timestamp = pd.Timestamp(dates[1])
 
         #  チャートモデルを作成
-        chart_model: modules.chart.model_intareface.imodel = (
-            modules.chart.csv_model.model(
+        chart_model: modules.chart.model_intareface.IModel = (
+            modules.chart.csv_model.Model(
                 args.csv_filepath,
             )
         )
         chart_model.load(start_date=start_date, end_date=end_date)
 
-        trade_engine: modules.trade.engine_interface.iengine = (
-            modules.trade.backtrader_engine.engine(
+        trade_engine: modules.trade.engine_interface.IEngine = (
+            modules.trade.backtrader_engine.Engine(
                 leverage=args.leverage,
                 b_opt=args.mode == "opt",
                 cpu_count=args.cpu_count,

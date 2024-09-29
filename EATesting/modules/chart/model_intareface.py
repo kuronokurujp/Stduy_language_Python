@@ -4,7 +4,7 @@ import backtrader as bt
 import pandas as pd
 
 
-class imodel(metaclass=abc.ABCMeta):
+class IModel(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def load(
         self,

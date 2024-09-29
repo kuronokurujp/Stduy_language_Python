@@ -6,7 +6,7 @@ import pandas as pd
 
 
 # 価格を記載しているCSVファイルをロードしてチャートモデル
-class model(interface.imodel):
+class Model(interface.IModel):
     data: pd.DataFrame
     file_path: pathlib.Path
 

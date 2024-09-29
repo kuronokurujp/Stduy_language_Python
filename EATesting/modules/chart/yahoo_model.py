@@ -5,7 +5,7 @@ import pandas as pd
 import yfinance as yf
 
 
-class model(interface.imodel):
+class Model(interface.IModel):
     symbol: str = ""
 
     def __init__(self, symbol: str = "^N225") -> None:

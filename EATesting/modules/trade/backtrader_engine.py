@@ -23,9 +23,11 @@ hv.extension("bokeh")
 
 # Backtraderのplotをオーバーライドするクラス
 # これ各ロジック毎に用意する？
-class PygalPlotter:
-    def __init__(self):
-        pass
+class SaveChartPlotter:
+    path: pathlib.Path = None
+
+    def __init__(self, filename: pathlib.Path):
+        self.path = filename
 
     def plot(self, strategy, *args, **kwargs):
         # データを収集
@@ -44,7 +46,7 @@ class PygalPlotter:
         pass
 
 
-class engine(interface.iengine):
+class Engine(interface.IEngine):
     cerebro: bt.Cerebro = None
     leverage: float = 1.0
     b_opt: bool = False
@@ -65,7 +67,7 @@ class engine(interface.iengine):
         self.cerebro = bt.Cerebro()
 
     def run(
-        self, logic: logic_interface.ilogic, chart_model: chart_interface.imodel
+        self, logic: logic_interface.ILogic, chart_model: chart_interface.IModel
     ) -> None:
         # データをCerebroに追加
         self.cerebro.adddata(chart_model.prices_format_backtrader())
@@ -87,14 +89,14 @@ class engine(interface.iengine):
     def save_file(self, filepath: pathlib.Path):
         if self.b_opt is False:
             # カスタムプロッターを使用してプロットしてセーブ
-            # cerebro.plot(plotter=pygal_plotter)
-            # cerebro.plot()
+            # self.cerebro.plot(plotter=pygal_plotter)
+            # self.cerebro.plot()
 
             self.__save_test_chart_file(
                 strategy=self.result_strategy, filepath=filepath
             )
 
-    def __test(self, logic: logic_interface.ilogic):
+    def __test(self, logic: logic_interface.ILogic):
         # カスタムアナライザーを追加
         logic.attach_test_strategy(self)
 
@@ -102,7 +104,7 @@ class engine(interface.iengine):
         strategies = self.cerebro.run()
         self.result_strategy = strategies[0]
 
-    def __opt(self, logic: logic_interface.ilogic):
+    def __opt(self, logic: logic_interface.ILogic):
         total: int = logic.attach_opt_strategy(self)
         print(f"検証回数({total})")
 

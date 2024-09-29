@@ -8,7 +8,7 @@ import configparser
 
 
 # ロジックの基本クラス
-class LogicBase(logic_interface.ilogic):
+class LogicBase(logic_interface.ILogic):
     # ConfigParserオブジェクトを作成
     config = configparser.ConfigParser()
 
@@ -18,10 +18,10 @@ class LogicBase(logic_interface.ilogic):
         with open(logic_filepath, "r", encoding="utf-8") as configfile:
             self.config.read_file(configfile)
 
-    def attach_test_strategy(self, trade_engine: trade_intarface.iengine) -> None:
+    def attach_test_strategy(self, trade_engine: trade_intarface.IEngine) -> None:
         self._addstrategy(trade_engine.cerebro)
 
-    def attach_opt_strategy(self, trade_engine: trade_intarface.iengine) -> int:
+    def attach_opt_strategy(self, trade_engine: trade_intarface.IEngine) -> int:
         return self._optstrategy(trade_engine.cerebro)
 
     def _addstrategy(self, cerebro: bt.cerebro):
