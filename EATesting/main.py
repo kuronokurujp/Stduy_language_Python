@@ -11,15 +11,15 @@ import multiprocessing
 
 # EAロジッククラス
 import modules.logics.rsi
-import modules.trade.backtrader_logic
+import modules.trade.backtrader.backtrader_logic
 
 # チャートモデルクラス
 import modules.chart.csv_model
 import modules.chart.model_intareface
 
 # トレードエンジン
-import modules.trade.backtrader_engine
-import modules.trade.engine_interface
+import modules.trade.backtrader.backtrader_engine
+import modules.trade.interface.engine_interface
 
 
 import argparse
@@ -94,7 +94,7 @@ def RunOpt(cerebro, cpu_count: int = 1, leverage: float = 1.0):
 
 
 def EAOpt(
-    use_logic: modules.trade.backtrader_logic.LogicBase,
+    use_logic: modules.trade.backtrader.backtrader_logic.LogicBase,
     chart_model: modules.chart.model_intareface.IModel,
     cpu_count: int,
     leverage: float = 1.0,
@@ -201,8 +201,8 @@ if __name__ == "__main__":
         )
         chart_model.load(start_date=start_date, end_date=end_date)
 
-        trade_engine: modules.trade.engine_interface.IEngine = (
-            modules.trade.backtrader_engine.Engine(
+        trade_engine: modules.trade.interface.engine_interface.IEngine = (
+            modules.trade.backtrader.backtrader_engine.Engine(
                 leverage=args.leverage,
                 b_opt=args.mode == "opt",
                 cpu_count=args.cpu_count,

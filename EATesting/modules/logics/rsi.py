@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 from pathlib import Path
 import backtrader as bt
-import modules.trade.backtrader_logic
-import modules.trade.backtrader_strategy as strategy
-import modules.trade.backtrader_analyzer as analyzer
-import modules.trade.analyzer_interface as analyzer_interface
+import modules.trade.backtrader.backtrader_logic
+import modules.trade.backtrader.backtrader_strategy as strategy
+import modules.trade.backtrader.backtrader_analyzer as analyzer
+import modules.trade.interface.analyzer_interface as analyzer_interface
 
 import modules.common
 import pandas as pd
@@ -140,7 +140,7 @@ class RSIStrategy(strategy.BaseStrategy):
                     self.order = self._close(msg="cross before")
 
 
-class RSILogic(modules.trade.backtrader_logic.LogicBase):
+class RSILogic(modules.trade.backtrader.backtrader_logic.LogicBase):
 
     def __init__(self, logic_filepath: Path) -> None:
         super().__init__(logic_filepath)

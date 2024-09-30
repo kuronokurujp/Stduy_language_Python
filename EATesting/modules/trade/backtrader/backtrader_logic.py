@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import modules.logics.logic_interface as logic_interface
-import modules.trade.engine_interface as trade_intarface
-import modules.trade.backtrader_analyzer as backtrader_analyzer
-import modules.trade.analyzer_interface as analyzer_interface
+import modules.trade.interface.logic_interface as logic_interface
+import modules.trade.interface.engine_interface as trade_intarface
+import modules.trade.backtrader.backtrader_analyzer as backtrader_analyzer
+import modules.trade.interface.analyzer_interface as analyzer_interface
 
 import backtrader as bt
 import pathlib

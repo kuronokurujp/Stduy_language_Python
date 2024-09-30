@@ -1,6 +1,6 @@
 import abc
-import modules.trade.engine_interface as trade_intarface
-import modules.trade.analyzer_interface as analyzer_interface
+import modules.trade.interface.engine_interface as trade_intarface
+import modules.trade.interface.analyzer_interface as analyzer_interface
 
 
 class ILogic(metaclass=abc.ABCMeta):

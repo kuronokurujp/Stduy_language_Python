@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import modules.trade.engine_interface as interface
-import modules.trade.analyzer_interface as analyzer_interface
+import modules.trade.interface.engine_interface as interface
+import modules.trade.interface.analyzer_interface as analyzer_interface
 import modules.chart.model_intareface as chart_interface
-import modules.logics.logic_interface as logic_interface
+import modules.trade.interface.logic_interface as logic_interface
 
 import holoviews as hv
 import pathlib

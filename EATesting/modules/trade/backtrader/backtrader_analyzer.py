@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import backtrader as bt
 import numpy as np
-import modules.trade.analyzer_interface as analyzer_interface
+import modules.trade.interface.analyzer_interface as analyzer_interface
 
 
 # バックトレード用の基本解析クラス
