@@ -8,11 +8,15 @@ import gc
 class BaseStrategy(bt.Strategy):
     __b_opt: bool = False
     __b_log: bool = False
-    bBuy: bool = True
-    bSell: bool = False
-    order = None
+    __b_buy: bool = True
+    __b_sell: bool = False
+    __order = None
     buyprice = None
     buycomm = None
+
+    buy_signals: list = None
+    sell_signals: list = None
+    close_signals: list = None
 
     @property
     def is_opt(self) -> bool:
@@ -24,11 +28,11 @@ class BaseStrategy(bt.Strategy):
 
     @property
     def is_buy_status(self) -> bool:
-        return self.bBuy
+        return self.__b_buy
 
     @property
     def is_sell_status(self) -> bool:
-        return self.bSell
+        return self.__b_sell
 
     def __init__(self, b_opt: bool, b_log: bool):
         self.__b_opt = b_opt
@@ -48,19 +52,19 @@ class BaseStrategy(bt.Strategy):
             self.close_signal = np.nan
             self.trade_log = []  # 取引履歴を記録
             self.rsi_values = []  # RSIの値を保存するリスト
-            self.dates = []  # 日時を保存するリスト
-            self.close_values = []  # 終値を保存するリスト
-            self.open_values = []  # 終値を保存するリスト
-            self.high_values = []  # 終値を保存するリスト
-            self.low_values = []  # 終値を保存するリスト
+            # self.dates = []  # 日時を保存するリスト
+            # self.close_values = []  # 終値を保存するリスト
+            # self.open_values = []  # 終値を保存するリスト
+            # self.high_values = []  # 終値を保存するリスト
+            # self.low_values = []  # 終値を保存するリスト
 
     # ローソク足更新のたびに呼ばれる
     def next(self):
-        self.dates.append(self.datas[0].datetime.datetime(0))
-        self.close_values.append(self.data_close[0])
-        self.open_values.append(self.data_open[0])
-        self.high_values.append(self.data_high[0])
-        self.low_values.append(self.data_low[0])
+        # self.dates.append(self.datas[0].datetime.datetime(0))
+        # self.close_values.append(self.data_close[0])
+        # self.open_values.append(self.data_open[0])
+        # self.high_values.append(self.data_high[0])
+        # self.low_values.append(self.data_low[0])
 
         if not self.__b_opt:
             self.buy_signal = np.nan
@@ -141,38 +145,38 @@ class BaseStrategy(bt.Strategy):
             self._log("Order Canceled/Margin/Rejected", doprint=self.__b_log)
 
         # Write down: no pending order
-        self.order = None
+        self.__order = None
 
     def _buy(self):
-        self.order = self.buy()
+        self.__order = self.buy()
         if not self.__b_opt:
             self.buy_signal = self.data.close[0]
 
-        self.bBuy = True
-        self.bSell = False
+        self.__b_buy = True
+        self.__b_sell = False
 
         if self.__b_log:
             self._log(f"BUY ORDER: {self.data.datetime.date(0)}", doprint=True)
 
-        return self.order
+        return self.__order
 
     def _sell(self):
-        self.order = self.sell()
+        self.__order = self.sell()
         if not self.__b_opt:
             self.sell_signal = self.data.close[0]
 
-        self.bBuy = False
-        self.bSell = True
+        self.__b_buy = False
+        self.__b_sell = True
         if self.__b_log:
             self._log(
                 f"SELL ORDER: {self.data.datetime.date(0)}",
                 doprint=True,
             )
 
-        return self.order
+        return self.__order
 
     def _close(self, msg: str = None):
-        self.order = self.close()
+        self.__order = self.close()
 
         if not self.__b_opt:
             self.close_signal = self.data.close[0]
@@ -182,7 +186,7 @@ class BaseStrategy(bt.Strategy):
                 f"CLOSE ORDER ({msg}): {self.data.datetime.date(0)}", doprint=True
             )
 
-        return self.order
+        return self.__order
 
     def __stop(self, msg: str):
         if self.__b_opt is False:

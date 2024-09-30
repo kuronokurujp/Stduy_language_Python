@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import modules.trade.engine_interface as interface
+import modules.trade.analyzer_interface as analyzer_interface
 import modules.chart.model_intareface as chart_interface
 import modules.logics.logic_interface as logic_interface
 
@@ -97,8 +98,11 @@ class Engine(interface.IEngine):
             )
 
     def __test(self, logic: logic_interface.ILogic):
-        # カスタムアナライザーを追加
+        # 利用する戦略をエンジンにアタッチ
         logic.attach_test_strategy(self)
+
+        # カスタム解析クラス登録
+        self.cerebro.addanalyzer(logic.analyzer_class(), _name="custom_analyzer")
 
         # バックテストの実行
         strategies = self.cerebro.run()
@@ -134,11 +138,16 @@ class Engine(interface.IEngine):
     # TODO: トレード用なのにチャートファイル生成までやっているのおかしい
     # チャート生成は別クラスに分離しないと
     def __save_test_chart_file(self, strategy, filepath: pathlib.Path):
-        dates = np.array(strategy.dates)
-        close_values = np.array(strategy.close_values)
-        open_values = np.array(strategy.open_values)
-        high_values = np.array(strategy.high_values)
-        low_values = np.array(strategy.low_values)
+        # カスタムアナライザーからデータを取得
+        custom_analyzer: analyzer_interface.IAnalyzer = (
+            strategy.analyzers.custom_analyzer
+        )
+
+        dates = custom_analyzer.date_values
+        close_values = custom_analyzer.close_values
+        open_values = custom_analyzer.open_values
+        high_values = custom_analyzer.high_values
+        low_values = custom_analyzer.low_values
 
         # データフレームの作成
         data = pd.DataFrame(
@@ -218,7 +227,7 @@ class Engine(interface.IEngine):
         hvplot.save(candlestick, filename=filepath.as_posix())
 
         print(
-            "チャートを 'backtrader_datashader_chart.html' に保存しました。Webブラウザで開いてください。"
+            f"チャートを '{filepath.as_posix()}' に保存しました。Webブラウザで開いてください。"
         )
 
     def __show_opt(self, results, result_put_flag: bool = False):

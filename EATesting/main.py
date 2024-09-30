@@ -11,7 +11,7 @@ import multiprocessing
 
 # EAロジッククラス
 import modules.logics.rsi
-import modules.logics.backtrader_logic
+import modules.trade.backtrader_logic
 
 # チャートモデルクラス
 import modules.chart.csv_model
@@ -94,7 +94,7 @@ def RunOpt(cerebro, cpu_count: int = 1, leverage: float = 1.0):
 
 
 def EAOpt(
-    use_logic: modules.logics.backtrader_logic.LogicBase,
+    use_logic: modules.trade.backtrader_logic.LogicBase,
     chart_model: modules.chart.model_intareface.IModel,
     cpu_count: int,
     leverage: float = 1.0,

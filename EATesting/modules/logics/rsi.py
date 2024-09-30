@@ -1,51 +1,33 @@
 #!/usr/bin/env python
 from pathlib import Path
 import backtrader as bt
-import modules.logics.backtrader_logic
-import modules.logics.backtrader_strategy as strategy
+import modules.trade.backtrader_logic
+import modules.trade.backtrader_strategy as strategy
+import modules.trade.backtrader_analyzer as analyzer
+import modules.trade.analyzer_interface as analyzer_interface
+
 import modules.common
 import pandas as pd
 
 
 # カスタムアナライザーの定義
-class RSIAnalyzer(bt.Analyzer):
+class RSIAnalyzer(analyzer.BaseAnalyzer):
     def __init__(self):
         self.rsi_min_values = []
         self.rsi_max_values = []
-        self.dates = []
-        self.buy_signals = []
-        self.sell_signals = []
-        self.close_signals = []
-        self.prices = []
 
-    def next(self):
-        rsi_min_value = self.strategy.rsi_min[0]
-        rsi_max_value = self.strategy.rsi_max[0]
+    def _next(self):
+        super().next()
 
-        self.rsi_min_values.append(rsi_min_value)
-        self.rsi_max_values.append(rsi_max_value)
-        self.dates.append(self.strategy.data.datetime.datetime(0))
-        self.prices.append(self.strategy.data.close[0])
+        self.rsi_min_values.append(self.strategy.rsi_min[0])
+        self.rsi_max_values.append(self.strategy.rsi_max[0])
 
-        # if self.strategy.buy_signals:
-        self.buy_signals.append(self.strategy.buy_signal)
+    def get_analysis(self) -> dict:
+        data_dict: dict = super().get_analysis()
+        data_dict["rsi_min_values"] = self.rsi_min_values
+        data_dict["rsi_max_values"] = self.rsi_max_values
 
-        # if self.strategy.sell_signals:
-        self.sell_signals.append(self.strategy.sell_signal)
-
-        # if self.strategy.close_signals:
-        self.close_signals.append(self.strategy.close_signal)
-
-    def get_analysis(self):
-        return {
-            "dates": self.dates,
-            "prices": self.prices,
-            "rsi_min_values": self.rsi_min_values,
-            "rsi_max_values": self.rsi_max_values,
-            "buy_signals": self.buy_signals,
-            "sell_signals": self.sell_signals,
-            "close_signals": self.close_signals,
-        }
+        return data_dict
 
 
 # RSIを使用したストラテジーの定義
@@ -158,7 +140,7 @@ class RSIStrategy(strategy.BaseStrategy):
                     self.order = self._close(msg="cross before")
 
 
-class RSILogic(modules.logics.backtrader_logic.LogicBase):
+class RSILogic(modules.trade.backtrader_logic.LogicBase):
 
     def __init__(self, logic_filepath: Path) -> None:
         super().__init__(logic_filepath)
@@ -176,8 +158,8 @@ class RSILogic(modules.logics.backtrader_logic.LogicBase):
             close_after_val=float(test_data["close_after_val"]),
         )
 
-        # カスタムアナライザーを追加
-        # cerebro.addanalyzer(RSIAnalyzer, _name="custom_analyzer")
+    def analyzer_class(self) -> type[analyzer_interface.IAnalyzer]:
+        return RSIAnalyzer
 
     def _optstrategy(self, cerebro: bt.cerebro) -> int:
         opt_data = self.config["opt"]

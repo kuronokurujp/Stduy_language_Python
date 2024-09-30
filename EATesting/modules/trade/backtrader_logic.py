@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import modules.logics.logic_interface as logic_interface
 import modules.trade.engine_interface as trade_intarface
+import modules.trade.backtrader_analyzer as backtrader_analyzer
+import modules.trade.analyzer_interface as analyzer_interface
 
 import backtrader as bt
 import pathlib
@@ -19,16 +21,20 @@ class LogicBase(logic_interface.ILogic):
             self.config.read_file(configfile)
 
     def attach_test_strategy(self, trade_engine: trade_intarface.IEngine) -> None:
+        # 戦略追加
         self._addstrategy(trade_engine.cerebro)
 
     def attach_opt_strategy(self, trade_engine: trade_intarface.IEngine) -> int:
         return self._optstrategy(trade_engine.cerebro)
 
+    def analyzer_class(self) -> type[analyzer_interface.IAnalyzer]:
+        return backtrader_analyzer.BaseAnalyzer()
+
     def _addstrategy(self, cerebro: bt.cerebro):
-        pass
+        raise NotImplementedError()
 
     def _optstrategy(self, cerebro: bt.cerebro) -> int:
-        pass
+        raise NotImplementedError()
 
     def show_test(self, results):
         pass
