@@ -28,6 +28,8 @@ class RSIAnalyzer(analyzer.BaseAnalyzer):
         return data_dict
 
 
+# Backtraderシステムに依存した作るになっている
+# しかし現時点でBacktrader以外のを使う予定はないので分離対応はこれ以上しない
 # RSIを使用したストラテジーの定義
 class RSIStrategy(strategy.BaseStrategy):
     params = (
