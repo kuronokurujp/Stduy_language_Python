@@ -11,11 +11,14 @@ import multiprocessing
 
 # EAロジッククラス
 import modules.logics.rsi
-import modules.trade.backtrader.backtrader_logic
 
-# チャートモデルクラス
-import modules.chart.csv_model
-import modules.chart.model_intareface
+# マーケットモデルクラス
+import modules.chart.model.market.csv_model as market_csv
+import modules.chart.model.market.market_intareface as market_interface
+
+# ロジックモデルクラス
+import modules.chart.model.logic.model as logic_model
+import modules.chart.model.logic.backtrader_model as bk_logic_model
 
 # トレードエンジン
 import modules.trade.backtrader.backtrader_engine
@@ -62,9 +65,10 @@ def limit_cpu_usage(max_usage=10):
     max_usage: int, Maximum CPU usage percentage (0-100).
     """
     while True:
-        cpu_usage = psutil.cpu_percent(interval=1)
-        if cpu_usage > max_usage:
-            time.sleep(1)
+        pass
+        # cpu_usage = psutil.cpu_percent(interval=1)
+        # if cpu_usage > max_usage:
+        #    time.sleep(1)
 
 
 def show_alert(title: str, msg: str):
@@ -93,43 +97,43 @@ def RunOpt(cerebro, cpu_count: int = 1, leverage: float = 1.0):
     return cerebro.run(maxcpus=cpu_count)
 
 
-def EAOpt(
-    use_logic: modules.trade.backtrader.backtrader_logic.LogicBase,
-    chart_model: modules.chart.model_intareface.IModel,
-    cpu_count: int,
-    leverage: float = 1.0,
-):
-    # データをbacktrader用に変換
-    data_bt = chart_model.prices_format_backtrader()
+# def EAOpt(
+#    use_logic: modules.trade.backtrader.backtrader_logic.LogicBase,
+#    chart_model: modules.chart.model.model_intarefacereface.IModel,
+#    cpu_count: int,
+#    leverage: float = 1.0,
+# ):
+# データをbacktrader用に変換
+#    data_bt = chart_model.prices_format_backtrader()
 
-    # Cerebroの初期化
-    cerebro = bt.Cerebro()
+# Cerebroの初期化
+#    cerebro = bt.Cerebro()
 
-    # データをCerebroに追加
-    cerebro.adddata(data_bt)
+# データをCerebroに追加
+#    cerebro.adddata(data_bt)
 
-    total_combinations: int = use_logic._optstrategy(cerebro=cerebro)
+#    total_combinations: int = use_logic._optstrategy(cerebro=cerebro)
 
-    # CPUを利用数を計算
-    cpu_max: int = multiprocessing.cpu_count()
-    # CPUコア数最小・最大をチェック
-    if cpu_count <= 0:
-        cpu_count = 1
-    elif cpu_max < cpu_count:
-        cpu_count = cpu_max
+# CPUを利用数を計算
+#    cpu_max: int = multiprocessing.cpu_count()
+# CPUコア数最小・最大をチェック
+#    if cpu_count <= 0:
+#        cpu_count = 1
+#    elif cpu_max < cpu_count:
+#        cpu_count = cpu_max
 
-    print(f"使用するCPUコア数は({cpu_count}) / CPUコア最大数は({cpu_max})")
+#    print(f"使用するCPUコア数は({cpu_count}) / CPUコア最大数は({cpu_max})")
 
-    global g_pbar
-    g_pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total_combinations)
+#    global g_pbar
+#    g_pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total_combinations)
 
-    cerebro.optcallback(OptimizerCallbacks)
-    results = RunOpt(cerebro, cpu_count, leverage=leverage)
+#    cerebro.optcallback(OptimizerCallbacks)
+#    results = RunOpt(cerebro, cpu_count, leverage=leverage)
 
-    if g_pbar is not None:
-        g_pbar.close()
+#    if g_pbar is not None:
+#        g_pbar.close()
 
-    use_logic.show_opt(results=results)
+#    use_logic.show_opt(results=results)
 
 
 if __name__ == "__main__":
@@ -182,36 +186,49 @@ if __name__ == "__main__":
     try:
         # 引数の解析
         args = parser.parse_args()
+        b_test: bool = args.mode == "test"
+        b_opt: bool = args.mode == "opt"
 
-        # 利用するロジックのインスタンス生成
-        use_logic = modules.logics.rsi.RSILogic(
-            logic_filepath=pathlib.Path(args.logic_data_filepath)
-        )
+        # テストも最適化の設定がない状態
+        if not b_test and not b_opt:
+            raise ValueError(f"Unknown type '{args.type}' specified")
 
-        # 指定された期間でデータをフィルタリング
-        dates: list[str] = str.split(args.start_to_end, "/")
-        start_date: pd.Timestamp = pd.Timestamp(dates[0])
-        end_date: pd.Timestamp = pd.Timestamp(dates[1])
-
-        #  チャートモデルを作成
-        chart_model: modules.chart.model_intareface.IModel = (
-            modules.chart.csv_model.Model(
-                args.csv_filepath,
-            )
-        )
-        chart_model.load(start_date=start_date, end_date=end_date)
-
+        # トレードエンジン作成
         trade_engine: modules.trade.interface.engine_interface.IEngine = (
             modules.trade.backtrader.backtrader_engine.Engine(
                 leverage=args.leverage,
-                b_opt=args.mode == "opt",
+                b_opt=not b_test,
                 cpu_count=args.cpu_count,
             )
         )
 
-        if args.mode == "test":
+        #  チャートモデルを作成
+        chart_model: market_interface.IModel = (
+            market_csv.Model(  # modules.chart.model.model_intarefacereface.IModel = (  # modules.chart.model.csv_model.Model(
+                args.csv_filepath,
+            )
+        )
+
+        # 指定された期間でデータをフィルタリング
+        # TODO: loadメソッド内に文字列解析して開始と終わりの日付を作る
+        dates: list[str] = str.split(args.start_to_end, "/")
+        start_date: pd.Timestamp = pd.Timestamp(dates[0])
+        end_date: pd.Timestamp = pd.Timestamp(dates[1])
+        chart_model.load(start_date=start_date, end_date=end_date)
+
+        if b_test:
+            # TODO: チャートのロジックモデルを作成
+            model_logic: logic_model.IModel = bk_logic_model.IniFileModelByTest(
+                logic_filepath=pathlib.Path(args.logic_data_filepath),
+                # 戦略を登録するメソッド
+                regist_strategey=modules.logics.rsi.RSIStrategy.add_strategy,
+                # 解析を登録するメソッド
+                regist_analyzer=modules.logics.rsi.RSIStrategy.analyzer_class,
+            )
+
             # トレードテスト開始
-            trade_engine.run(use_logic, chart_model=chart_model)
+            trade_engine.run(logic_model=model_logic, chart_model=chart_model)
+            # trade_engine.run(use_logic, chart_model=chart_model)
             # トレードテスト結果をチャートファイルで保存
             trade_engine.save_file(
                 filepath=pathlib.Path(
@@ -219,27 +236,38 @@ if __name__ == "__main__":
                 )
             )
             show_alert(title="終了", msg="テストが終わりました")
-        elif args.mode == "opt":
+        # TODO: 最適化処理はまったくリファクタリングしていないのでテスト処理が終わったらする
+        else:
             """
             Run the backtrader strategy with limited CPU usage.
             """
+            # TODO: チャートのロジックモデルを作成
+            model_logic: logic_model.IModel = bk_logic_model.IniFileModelByOpt(
+                logic_filepath=pathlib.Path(args.logic_data_filepath),
+                # 最適化戦略を登録するメソッド
+                regist_opt=modules.logics.rsi.RSIStrategy.add_opt,
+            )
+
             # CPUパワーの制限%があれば制限処理のスレッドを起動
             if args.cpu_limit_power_percent < 100:
                 monitor_process = multiprocessing.Process(
-                    target=limit_cpu_usage, args=(args.cpu_limit_power_percent,)
+                    target=limit_cpu_usage, args=(args.cpu_limit_power_percent)
                 )
-
                 monitor_process.start()
 
-            EAOpt(
-                logic=use_logic,
-                chart_model=chart_model,
-                cpu_count=args.cpu_count,
-                leverage=args.leverage,
-            )
+            # 利用するロジックのインスタンス生成
+            # use_logic = modules.logics.rsi.RSILogic(
+            #    logic_filepath=pathlib.Path(args.logic_data_filepath)
+            # )
+
+            # EAOpt(
+            #    logic=use_logic,
+            #    # model_logic=model_logic,
+            #    chart_model=chart_model,
+            #    cpu_count=args.cpu_count,
+            #    leverage=args.leverage,
+            # )
             show_alert(title="終了", msg="最適化が終わりました")
-        else:
-            raise ValueError(f"Unknown type '{args.type}' specified")
 
     except ValueError as ve:
         print(f"ValueError: {ve}")

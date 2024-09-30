@@ -52,20 +52,9 @@ class BaseStrategy(bt.Strategy):
             self.close_signal = np.nan
             self.trade_log = []  # 取引履歴を記録
             self.rsi_values = []  # RSIの値を保存するリスト
-            # self.dates = []  # 日時を保存するリスト
-            # self.close_values = []  # 終値を保存するリスト
-            # self.open_values = []  # 終値を保存するリスト
-            # self.high_values = []  # 終値を保存するリスト
-            # self.low_values = []  # 終値を保存するリスト
 
     # ローソク足更新のたびに呼ばれる
     def next(self):
-        # self.dates.append(self.datas[0].datetime.datetime(0))
-        # self.close_values.append(self.data_close[0])
-        # self.open_values.append(self.data_open[0])
-        # self.high_values.append(self.data_high[0])
-        # self.low_values.append(self.data_low[0])
-
         if not self.__b_opt:
             self.buy_signal = np.nan
             self.sell_signal = np.nan

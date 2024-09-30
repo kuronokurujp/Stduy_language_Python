@@ -49,9 +49,6 @@ class BaseAnalyzer(analyzer_interface.IAnalyzer, bt.Analyzer):
         self.highs.append(data.high[0])
         self.lows.append(data.low[0])
 
-        # self.dates.append(self.strategy.data.datetime.datetime(0))
-        # self.prices.append(self.strategy.data.close[0])
-
         # if self.strategy.buy_signals:
         self.buy_signals.append(st.buy_signal)
 

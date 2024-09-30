@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import modules.trade.interface.engine_interface as interface
 import modules.trade.interface.analyzer_interface as analyzer_interface
-import modules.chart.model_intareface as chart_interface
-import modules.trade.interface.logic_interface as logic_interface
+import modules.chart.model.market.market_intareface as market_interface
+
+# import modules.trade.interface.logic_interface as logic_interface
+import modules.chart.model.logic.model as logic_model
 
 import holoviews as hv
 import pathlib
-import numpy as np
 import backtrader as bt
 import pandas as pd
 import multiprocessing
@@ -68,7 +69,9 @@ class Engine(interface.IEngine):
         self.cerebro = bt.Cerebro()
 
     def run(
-        self, logic: logic_interface.ILogic, chart_model: chart_interface.IModel
+        self,
+        logic_model: logic_model.IModel,
+        chart_model: market_interface.IModel,
     ) -> None:
         # データをCerebroに追加
         self.cerebro.adddata(chart_model.prices_format_backtrader())
@@ -83,9 +86,9 @@ class Engine(interface.IEngine):
         self.cerebro.addsizer(bt.sizers.FixedSize, stake=self.leverage)
 
         if self.b_opt is False:
-            self.__test(logic=logic)
+            self.__test(logic_model)
         else:
-            self.__opt(logic=logic)
+            self.__opt(logic_model)
 
     def save_file(self, filepath: pathlib.Path):
         if self.b_opt is False:
@@ -97,19 +100,19 @@ class Engine(interface.IEngine):
                 strategy=self.result_strategy, filepath=filepath
             )
 
-    def __test(self, logic: logic_interface.ILogic):
+    def __test(self, model: logic_model.IModel):
         # 利用する戦略をエンジンにアタッチ
-        logic.attach_test_strategy(self)
+        model.output_strategy(self)
 
         # カスタム解析クラス登録
-        self.cerebro.addanalyzer(logic.analyzer_class(), _name="custom_analyzer")
+        self.cerebro.addanalyzer(model.analayzer_class(), _name="custom_analyzer")
 
         # バックテストの実行
         strategies = self.cerebro.run()
         self.result_strategy = strategies[0]
 
-    def __opt(self, logic: logic_interface.ILogic):
-        total: int = logic.attach_opt_strategy(self)
+    def __opt(self, model: logic_model.IModel):
+        total: int = model.output_strategy(self)
         print(f"検証回数({total})")
 
         # CPUを利用数を計算

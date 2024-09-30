@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import modules.chart.model_intareface as interface
+import modules.chart.model.market.market_intareface as interface
 import backtrader as bt
 import pandas as pd
 import yfinance as yf

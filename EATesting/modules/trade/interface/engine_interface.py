@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 import abc
 import pathlib
-import modules.chart.model_intareface as chart_interface
-import modules.trade.interface.logic_interface as logic_interface
+import modules.chart.model.market.market_intareface as market_interface
+import modules.chart.model.logic.model as logic_interface
 
 
 class IEngine(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def run(self, logic: logic_interface, chart_model: chart_interface.IModel) -> None:
+    def run(
+        self, logic_model: logic_interface, chart_model: market_interface.IModel
+    ) -> None:
         return NotImplementedError()
 
     @abc.abstractmethod

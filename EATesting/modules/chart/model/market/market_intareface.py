@@ -17,4 +17,4 @@ class IModel(metaclass=abc.ABCMeta):
     def prices_format_backtrader(
         self,
     ) -> bt.feeds.PandasData:
-        return NotImplementedError()
+        raise NotImplementedError()
