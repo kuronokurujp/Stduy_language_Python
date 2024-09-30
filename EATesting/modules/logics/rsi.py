@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from pathlib import Path
 import backtrader as bt
-import gc
 import modules.logics.backtrader_logic
 import modules.logics.backtrader_strategy as strategy
 import modules.common
@@ -50,7 +49,6 @@ class RSIAnalyzer(bt.Analyzer):
 
 
 # RSIを使用したストラテジーの定義
-# class RSIStrategy(bt.Strategy):
 class RSIStrategy(strategy.BaseStrategy):
     params = (
         ("rsi_min_period", 7),
@@ -64,14 +62,7 @@ class RSIStrategy(strategy.BaseStrategy):
     )
 
     def __init__(self):
-        self.is_optimizing = self.params.optimizing
-        super().__init__(b_opt=self.is_optimizing)
-
-        self.order = None
-        self.buyprice = None
-        self.buycomm = None
-        self.p.value = 0
-        self.p.trades = 0
+        super().__init__(b_opt=self.params.optimizing, b_log=self.params.printlog)
 
         self.rsi_min = bt.indicators.RSI(
             self.data.close, period=self.params.rsi_min_period
@@ -79,81 +70,6 @@ class RSIStrategy(strategy.BaseStrategy):
         self.rsi_max = bt.indicators.RSI(
             self.data.close, period=self.params.rsi_max_period
         )
-
-        self.bBuy = False
-        self.bSell = False
-
-    def notify_order(self, order):
-        if order.status in [order.Submitted, order.Accepted]:
-            return
-
-        if order.status in [order.Completed]:
-            if order.isbuy():
-                self._log(
-                    "BUY EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f"
-                    % (
-                        order.executed.price,
-                        order.executed.value,
-                        order.executed.comm,
-                    ),
-                    doprint=self.params.printlog,
-                )
-                self.trade_log.append(
-                    {
-                        "datetime": self.datas[0].datetime.datetime(0),
-                        "price": self.data_close[0],
-                        "action": "buy",
-                    }
-                )
-
-                self.buyprice = order.executed.price
-                self.buycomm = order.executed.comm
-
-            else:  # Sell
-                self._log(
-                    "SELL EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f"
-                    % (
-                        order.executed.price,
-                        order.executed.value,
-                        order.executed.comm,
-                    ),
-                    doprint=self.params.printlog,
-                )
-                self.trade_log.append(
-                    {
-                        "datetime": self.datas[0].datetime.datetime(0),
-                        "price": self.data_close[0],
-                        "action": "sell",
-                    }
-                )
-
-            self.bar_executed = len(self)
-
-        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
-            self._log("Order Canceled/Margin/Rejected", doprint=self.params.printlog)
-
-        # Write down: no pending order
-        self.order = None
-
-    def notify_trade(self, trade):
-        if not trade.isclosed:
-            return
-
-        self._log(
-            "OPERATION PROFIT, GROSS %.2f, NET %.2f" % (trade.pnl, trade.pnlcomm),
-            doprint=self.params.printlog,
-        )
-        self.p.trades = self.p.trades + 1
-
-    def stop(self):
-        self._log(
-            "Ending Value %.2f" % (self.broker.getvalue()),
-            doprint=not self.is_optimizing,
-        )
-        self.p.value = self.broker.getvalue()
-
-        if self.is_optimizing:
-            gc.collect()
 
     def next(self):
         super().next()
@@ -193,24 +109,22 @@ class RSIStrategy(strategy.BaseStrategy):
                 rsi_min_value < rsi_max_value
                 and (rsi_max_value - rsi_min_value) >= self.params.rsi_blank_entry
             ):
-                self.order = self._buy(b_log=self.params.printlog)
+                self.order = self._buy()
             elif (
                 rsi_min_value > rsi_max_value
                 and (rsi_min_value - rsi_max_value) >= self.params.rsi_blank_entry
             ):
-                self.order = self._sell(b_log=self.params.printlog)
+                self.order = self._sell()
 
         elif self.position:
-            if self.bBuy:
+            if self.is_buy_status:
                 if self.params.close_type == "クロス後":
                     if (
                         abs(rsi_min_value - rsi_max_value)
                         >= self.params.close_after_val
                         and rsi_min_value > rsi_max_value
                     ):
-                        self.order = self._close(
-                            msg="cross after", b_log=self.params.printlog
-                        )
+                        self.order = self._close(msg="cross after")
 
                 elif self.params.close_type == "クロス前":
                     if (
@@ -218,25 +132,19 @@ class RSIStrategy(strategy.BaseStrategy):
                         <= self.params.close_before_val
                         and rsi_min_value <= rsi_max_value
                     ):
-                        self.order = self._close(
-                            msg="cross before", b_log=self.params.printlog
-                        )
+                        self.order = self._close(msg="cross before")
 
                 elif rsi_min_value > rsi_max_value:
-                    self.order = self._close(
-                        msg="cross after", b_log=self.params.printlog
-                    )
+                    self.order = self._close(msg="cross after")
 
-            elif self.bSell:
+            elif self.is_sell_status:
                 if self.params.close_type == "クロス後":
                     if (
                         abs(rsi_min_value - rsi_max_value)
                         >= self.params.close_after_val
                         and rsi_min_value < rsi_max_value
                     ):
-                        self.order = self._close(
-                            msg="cross after", b_log=self.params.printlog
-                        )
+                        self.order = self._close(msg="cross after")
 
                 elif self.params.close_type == "クロス前":
                     if (
@@ -244,14 +152,10 @@ class RSIStrategy(strategy.BaseStrategy):
                         <= self.params.close_before_val
                         and rsi_min_value >= rsi_max_value
                     ):
-                        self.order = self._close(
-                            msg="cross before", b_log=self.params.printlog
-                        )
+                        self.order = self._close(msg="cross before")
 
                 elif rsi_min_value < rsi_max_value:
-                    self.order = self._close(
-                        msg="cross before", b_log=self.params.printlog
-                    )
+                    self.order = self._close(msg="cross before")
 
 
 class RSILogic(modules.logics.backtrader_logic.LogicBase):
@@ -273,7 +177,7 @@ class RSILogic(modules.logics.backtrader_logic.LogicBase):
         )
 
         # カスタムアナライザーを追加
-        cerebro.addanalyzer(RSIAnalyzer, _name="custom_analyzer")
+        # cerebro.addanalyzer(RSIAnalyzer, _name="custom_analyzer")
 
     def _optstrategy(self, cerebro: bt.cerebro) -> int:
         opt_data = self.config["opt"]
