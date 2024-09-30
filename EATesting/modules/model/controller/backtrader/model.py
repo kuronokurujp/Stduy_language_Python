@@ -1,6 +1,6 @@
-import modules.chart.model.logic.model as model
-import modules.trade.interface.analyzer_interface as analyzer_interface
-import modules.trade.interface.engine_interface as engine_interface
+import modules.model.controller.model as model
+import modules.strategy.interface.analyzer_interface as analyzer_interface
+import modules.controller.interface as interface
 import pathlib
 
 
@@ -18,7 +18,7 @@ class IniFileModelByTest(model.IniFileBaseModel):
         self.__regist_strategy_func = regist_strategey
         self.__regist_analyzer_func = regist_analyzer
 
-    def output_strategy(self, engine: engine_interface.IEngine) -> int:
+    def output_strategy(self, engine: interface.IController) -> int:
         self.__regist_strategy_func(engine.cerebro, self.get_param("test"))
         return 0
 
@@ -38,7 +38,7 @@ class IniFileModelByOpt(model.IniFileBaseModel):
         super().__init__(logic_filepath=logic_filepath)
         self.__regist_opt_func = regist_opt
 
-    def output_strategy(self, engine: engine_interface.IEngine) -> int:
+    def output_strategy(self, engine: interface.IController) -> int:
         return self.__regist_opt_func(engine.cerebro, self.get_param("opt"))
 
     def analayzer_class(self) -> type[analyzer_interface.IAnalyzer]:

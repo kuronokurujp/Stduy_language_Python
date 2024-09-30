@@ -10,19 +10,19 @@ import pathlib
 import multiprocessing
 
 # EAロジッククラス
-import modules.logics.rsi
+import modules.strategy.rsi
 
 # マーケットモデルクラス
-import modules.chart.model.market.csv_model as market_csv
-import modules.chart.model.market.market_intareface as market_interface
+import modules.model.market.csv_model as market_csv
+import modules.model.market.market_intareface as market_interface
 
 # ロジックモデルクラス
-import modules.chart.model.logic.model as logic_model
-import modules.chart.model.logic.backtrader_model as bk_logic_model
+import modules.model.controller.model as logic_model
+import modules.model.controller.backtrader.model as bk_logic_model
 
 # トレードエンジン
-import modules.trade.backtrader.backtrader_engine
-import modules.trade.interface.engine_interface
+import modules.controller.backtrader.backtrader_controller as bk_controller
+import modules.controller.interface as controller_interface
 
 
 import argparse
@@ -194,19 +194,15 @@ if __name__ == "__main__":
             raise ValueError(f"Unknown type '{args.type}' specified")
 
         # トレードエンジン作成
-        trade_engine: modules.trade.interface.engine_interface.IEngine = (
-            modules.trade.backtrader.backtrader_engine.Engine(
-                leverage=args.leverage,
-                b_opt=not b_test,
-                cpu_count=args.cpu_count,
-            )
+        ctrl: controller_interface.IController = bk_controller.Controller(
+            leverage=args.leverage,
+            b_opt=not b_test,
+            cpu_count=args.cpu_count,
         )
 
-        #  チャートモデルを作成
-        chart_model: market_interface.IModel = (
-            market_csv.Model(  # modules.chart.model.model_intarefacereface.IModel = (  # modules.chart.model.csv_model.Model(
-                args.csv_filepath,
-            )
+        # マーケットモデルを作成
+        market_model: market_interface.IModel = market_csv.Model(
+            args.csv_filepath,
         )
 
         # 指定された期間でデータをフィルタリング
@@ -214,27 +210,28 @@ if __name__ == "__main__":
         dates: list[str] = str.split(args.start_to_end, "/")
         start_date: pd.Timestamp = pd.Timestamp(dates[0])
         end_date: pd.Timestamp = pd.Timestamp(dates[1])
-        chart_model.load(start_date=start_date, end_date=end_date)
+        market_model.load(start_date=start_date, end_date=end_date)
 
         if b_test:
             # TODO: チャートのロジックモデルを作成
             model_logic: logic_model.IModel = bk_logic_model.IniFileModelByTest(
                 logic_filepath=pathlib.Path(args.logic_data_filepath),
                 # 戦略を登録するメソッド
-                regist_strategey=modules.logics.rsi.RSIStrategy.add_strategy,
+                regist_strategey=modules.strategy.rsi.RSIStrategy.add_strategy,
                 # 解析を登録するメソッド
-                regist_analyzer=modules.logics.rsi.RSIStrategy.analyzer_class,
+                regist_analyzer=modules.strategy.rsi.RSIStrategy.analyzer_class,
             )
 
             # トレードテスト開始
-            trade_engine.run(logic_model=model_logic, chart_model=chart_model)
-            # trade_engine.run(use_logic, chart_model=chart_model)
+            ctrl.run(logic_model=model_logic, chart_model=market_model)
+
             # トレードテスト結果をチャートファイルで保存
-            trade_engine.save_file(
+            ctrl.save_file(
                 filepath=pathlib.Path(
                     "data\\test\\holoviews_datashader_candlestick.html"
                 )
             )
+
             show_alert(title="終了", msg="テストが終わりました")
         # TODO: 最適化処理はまったくリファクタリングしていないのでテスト処理が終わったらする
         else:
@@ -245,7 +242,7 @@ if __name__ == "__main__":
             model_logic: logic_model.IModel = bk_logic_model.IniFileModelByOpt(
                 logic_filepath=pathlib.Path(args.logic_data_filepath),
                 # 最適化戦略を登録するメソッド
-                regist_opt=modules.logics.rsi.RSIStrategy.add_opt,
+                regist_opt=modules.strategy.rsi.RSIStrategy.add_opt,
             )
 
             # CPUパワーの制限%があれば制限処理のスレッドを起動

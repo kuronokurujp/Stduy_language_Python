@@ -1,10 +1,8 @@
 #!/usr/bin/env python
-import modules.trade.interface.engine_interface as interface
-import modules.trade.interface.analyzer_interface as analyzer_interface
-import modules.chart.model.market.market_intareface as market_interface
-
-# import modules.trade.interface.logic_interface as logic_interface
-import modules.chart.model.logic.model as logic_model
+import modules.controller.interface as interface
+import modules.strategy.interface.analyzer_interface as analyzer_interface
+import modules.model.market.market_intareface as market_interface
+import modules.model.controller.model as logic_model
 
 import holoviews as hv
 import pathlib
@@ -48,7 +46,7 @@ class SaveChartPlotter:
         pass
 
 
-class Engine(interface.IEngine):
+class Controller(interface.IController):
     cerebro: bt.Cerebro = None
     leverage: float = 1.0
     b_opt: bool = False

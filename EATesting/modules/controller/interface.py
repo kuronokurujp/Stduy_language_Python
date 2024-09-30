@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import abc
 import pathlib
-import modules.chart.model.market.market_intareface as market_interface
-import modules.chart.model.logic.model as logic_interface
+import modules.model.market.market_intareface as market_interface
+import modules.model.controller.model as logic_interface
 
 
-class IEngine(metaclass=abc.ABCMeta):
+class IController(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def run(

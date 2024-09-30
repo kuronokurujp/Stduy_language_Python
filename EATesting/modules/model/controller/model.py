@@ -1,8 +1,8 @@
 import abc
 import configparser
 import pathlib
-import modules.trade.interface.engine_interface as engine_interface
-import modules.trade.interface.analyzer_interface as analyzer_interface
+import modules.controller.interface as interface
+import modules.strategy.interface.analyzer_interface as analyzer_interface
 
 
 class IModel(metaclass=abc.ABCMeta):
@@ -13,7 +13,7 @@ class IModel(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def output_strategy(self, engine: engine_interface.IEngine) -> int:
+    def output_strategy(self, engine: interface.IController) -> int:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -35,7 +35,7 @@ class IniFileBaseModel(IModel):
     def get_param(self, name: str):
         return self.__config[name]
 
-    def output_strategy(self, engine: engine_interface.IEngine) -> int:
+    def output_strategy(self, engine: interface.IController) -> int:
         return 0
 
     def analayzer_class(self) -> type[analyzer_interface.IAnalyzer]:

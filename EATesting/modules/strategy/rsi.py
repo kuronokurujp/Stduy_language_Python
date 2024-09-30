@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import backtrader as bt
 
-import modules.trade.backtrader.backtrader_strategy as strategy
-import modules.trade.backtrader.backtrader_analyzer as analyzer
-import modules.trade.interface.analyzer_interface as analyzer_interface
+import modules.strategy.backtrader.backtrader_strategy as strategy
+import modules.strategy.backtrader.backtrader_analyzer as analyzer
+import modules.strategy.interface.analyzer_interface as analyzer_interface
 
 import modules.common
 

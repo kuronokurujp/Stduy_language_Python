@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import backtrader as bt
 import numpy as np
-import modules.trade.interface.analyzer_interface as analyzer_interface
+import modules.strategy.interface.analyzer_interface as analyzer_interface
 
 
 # バックトレード用の基本解析クラス
@@ -10,7 +10,6 @@ class BaseAnalyzer(analyzer_interface.IAnalyzer, bt.Analyzer):
     buy_signals: list = []
     sell_signals: list = []
     close_signals: list = []
-    # prices: list = []
     closes: list = []
     opens: list = []
     highs: list = []
