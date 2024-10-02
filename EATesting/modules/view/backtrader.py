@@ -1,147 +1,47 @@
 #!/usr/bin/env python
-import modules.controller.interface as interface
+import modules.view.interface as view_interface
 import modules.strategy.interface.analyzer_interface as analyzer_interface
-import modules.model.market.market_intareface as market_interface
-import modules.model.controller.model as logic_model
-
-import holoviews as hv
 import pathlib
-import backtrader as bt
 import pandas as pd
-import multiprocessing
-from tqdm import tqdm
-from bokeh.models import HoverTool
 
 # hvplotを使用するために必要
 import hvplot.pandas
+import holoviews as hv
+from bokeh.models import HoverTool
 
 # 日本の祝日を考慮するため
 import jpholiday
 
+from tqdm import tqdm
+
 hv.extension("bokeh")
 
 
-# Backtraderのplotをオーバーライドするクラス
-# これ各ロジック毎に用意する？
-class SaveChartPlotter:
-    path: pathlib.Path = None
+# テスト結果をチャートファイルにして保存するビュー
+class SaveChartView(view_interface.IView):
 
-    def __init__(self, filename: pathlib.Path):
-        self.path = filename
+    def __init__(self, save_filepath: pathlib.Path) -> None:
+        super().__init__()
+        self.__save_filepath = save_filepath
 
-    def plot(self, strategy, *args, **kwargs):
-        # データを収集
-        data = strategy.datas[0]
-        data_dates = [bt.utils.date.num2date(date) for date in data.datetime.array]
-        data_close = data.close.array
-
-        # Pygalでプロット
-        # line_chart = pygal.Line(title="Backtrader with Pygal", x_label_rotation=20)
-        # line_chart.x_labels = map(str, data_dates)
-        # line_chart.add("Close", data_close)
-        # line_chart.render_to_file("backtrader_pygal_chart.svg")
-
+    # backtraderが呼び出すメソッド
     def show(self):
-        # PygalはSVGファイルに出力するため、このメソッドでは何もしない
+        # チャートファイル出力をするクラスなので表示処理はない
         pass
 
+    # backtraderが呼び出すメソッド
+    def plot(self, strategy, *args, **kwargs):
+        # 結果を設定して描画
+        self.__strategy = strategy
+        self.draw()
 
-class Controller(interface.IController):
-    cerebro: bt.Cerebro = None
-    leverage: float = 1.0
-    b_opt: bool = False
-    result_strategy = None
-    cpu_count: int = 0
-    pbar = None
+    def log(self, msg: str) -> None:
+        print(msg)
 
-    def __init__(
-        self, leverage: float = 1.0, b_opt: bool = False, cpu_count: int = 0
-    ) -> None:
-        super().__init__()
-
-        self.leverage = leverage
-        self.b_opt = b_opt
-        self.cpu_count = cpu_count
-
-        # Cerebroの初期化
-        self.cerebro = bt.Cerebro()
-
-    def run(
-        self,
-        logic_model: logic_model.IModel,
-        chart_model: market_interface.IModel,
-    ) -> None:
-        # データをCerebroに追加
-        self.cerebro.adddata(chart_model.prices_format_backtrader())
-
-        # 初期資金を設定
-        self.cerebro.broker.set_cash(1000000)
-        # レバレッジを変える
-        # commisionは手数料
-        self.cerebro.broker.setcommission(commission=0)
-
-        # ポジジョンサイズを変える事でレバレッジを変える
-        self.cerebro.addsizer(bt.sizers.FixedSize, stake=self.leverage)
-
-        if self.b_opt is False:
-            self.__test(logic_model)
-        else:
-            self.__opt(logic_model)
-
-    def save_file(self, filepath: pathlib.Path):
-        if self.b_opt is False:
-            # カスタムプロッターを使用してプロットしてセーブ
-            # self.cerebro.plot(plotter=pygal_plotter)
-            # self.cerebro.plot()
-
-            self.__save_test_chart_file(
-                strategy=self.result_strategy, filepath=filepath
-            )
-
-    def __test(self, model: logic_model.IModel):
-        # 利用する戦略をエンジンにアタッチ
-        model.output_strategy(self)
-
-        # カスタム解析クラス登録
-        self.cerebro.addanalyzer(model.analayzer_class(), _name="custom_analyzer")
-
-        # バックテストの実行
-        strategies = self.cerebro.run()
-        self.result_strategy = strategies[0]
-
-    def __opt(self, model: logic_model.IModel):
-        total: int = model.output_strategy(self)
-        print(f"検証回数({total})")
-
-        # CPUを利用数を計算
-        cpu_max: int = multiprocessing.cpu_count()
-        # CPUコア数最小・最大をチェック
-        if self.cpu_count <= 0:
-            self.cpu_count = 1
-        elif cpu_max < self.cpu_count:
-            self.cpu_count = cpu_max
-
-        print(f"使用するCPUコア数は({self.cpu_count}) / CPUコア最大数は({cpu_max})")
-
-        self.pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total)
-
-        # バックテストの実行
-        self.cerebro.optcallback(self.__optimizer_callbacks)
-        self.result_strategy = self.cerebro.run()
-
-        if self.pbar is not None:
-            self.pbar.close()
-
-    # TODO: 最適化結果を出力して保存
-    def __save_opt_result_file(self, filepath: pathlib.Path):
-        self.__show_opt(results=self.result_strategy)
-
-    # TODO: トレード用なのにチャートファイル生成までやっているのおかしい
-    # チャート生成は別クラスに分離しないと
-    def __save_test_chart_file(self, strategy, filepath: pathlib.Path):
+    def draw(self) -> None:
         # カスタムアナライザーからデータを取得
         custom_analyzer: analyzer_interface.IAnalyzer = (
-            strategy.analyzers.custom_analyzer
+            self.__strategy.analyzers.custom_analyzer
         )
 
         dates = custom_analyzer.date_values
@@ -225,15 +125,27 @@ class Controller(interface.IController):
         )
 
         # チャートファイル作成
-        hvplot.save(candlestick, filename=filepath.as_posix())
+        hvplot.save(candlestick, filename=self.__save_filepath.as_posix())
 
-        print(
-            f"チャートを '{filepath.as_posix()}' に保存しました。Webブラウザで開いてください。"
+        self.log(
+            msg=f"チャートを '{self.__save_filepath.as_posix()}' に保存しました。Webブラウザで開いてください。"
         )
 
-    def __show_opt(self, results, result_put_flag: bool = False):
+
+# 最適化テストした結果を表示するビュー
+class OptView(view_interface.IView):
+
+    def __init__(self, total: int) -> None:
+        super().__init__()
+
+        self.pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total)
+
+    def log(self, msg: str) -> None:
+        print(msg)
+
+    def draw(self) -> None:
         # 最適化結果の取得
-        if result_put_flag:
+        if False:
             print("==================================================")
             # 最適化結果の収集
             for stratrun in results:
@@ -265,5 +177,5 @@ class Controller(interface.IController):
             print("パラメータ: ", result[0].p._getkwargs())
 
     # 最適化の１処理が終わったに呼ばれるコールバック
-    def __optimizer_callbacks(self, cb):
+    def optimizer_callbacks(self, cb):
         self.pbar.update()

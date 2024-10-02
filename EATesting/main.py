@@ -13,16 +13,20 @@ import multiprocessing
 import modules.strategy.rsi
 
 # マーケットモデルクラス
-import modules.model.market.csv_model as market_csv
-import modules.model.market.market_intareface as market_interface
+import modules.model.market.interface as market_model_interface
+import modules.model.market.csv as market_csv
 
 # ロジックモデルクラス
-import modules.model.controller.model as logic_model
-import modules.model.controller.backtrader.model as bk_logic_model
+import modules.model.controller.model as ctrl_model_interface
+import modules.model.controller.backtrader as bk_model
 
-# トレードエンジン
-import modules.controller.backtrader.backtrader_controller as bk_controller
+# コントローラークラス
 import modules.controller.interface as controller_interface
+import modules.controller.backtrader as bk_controller
+
+
+# ビュークラス
+import modules.view.backtrader as bk_view
 
 
 import argparse
@@ -193,15 +197,8 @@ if __name__ == "__main__":
         if not b_test and not b_opt:
             raise ValueError(f"Unknown type '{args.type}' specified")
 
-        # トレードエンジン作成
-        ctrl: controller_interface.IController = bk_controller.Controller(
-            leverage=args.leverage,
-            b_opt=not b_test,
-            cpu_count=args.cpu_count,
-        )
-
         # マーケットモデルを作成
-        market_model: market_interface.IModel = market_csv.Model(
+        market_model: market_model_interface.IModel = market_csv.Model(
             args.csv_filepath,
         )
 
@@ -213,8 +210,14 @@ if __name__ == "__main__":
         market_model.load(start_date=start_date, end_date=end_date)
 
         if b_test:
-            # TODO: チャートのロジックモデルを作成
-            model_logic: logic_model.IModel = bk_logic_model.IniFileModelByTest(
+            view: bk_view.SaveChartView = bk_view.SaveChartView(
+                save_filepath=pathlib.Path(
+                    "data\\test\\holoviews_datashader_candlestick.html"
+                )
+            )
+
+            # チャートのロジックモデルを作成
+            ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByTest(
                 logic_filepath=pathlib.Path(args.logic_data_filepath),
                 # 戦略を登録するメソッド
                 regist_strategey=modules.strategy.rsi.RSIStrategy.add_strategy,
@@ -222,15 +225,16 @@ if __name__ == "__main__":
                 regist_analyzer=modules.strategy.rsi.RSIStrategy.analyzer_class,
             )
 
-            # トレードテスト開始
-            ctrl.run(logic_model=model_logic, chart_model=market_model)
-
-            # トレードテスト結果をチャートファイルで保存
-            ctrl.save_file(
-                filepath=pathlib.Path(
-                    "data\\test\\holoviews_datashader_candlestick.html"
-                )
+            # トレードエンジン作成
+            ctrl: controller_interface.IController = bk_controller.Controller(
+                leverage=args.leverage,
+                b_opt=False,
+                cpu_count=args.cpu_count,
+                cerebro=ctrl_model.Cerebro,
             )
+
+            # トレードテスト開始
+            ctrl.run(controller_model=ctrl_model, market_model=market_model, view=view)
 
             show_alert(title="終了", msg="テストが終わりました")
         # TODO: 最適化処理はまったくリファクタリングしていないのでテスト処理が終わったらする
@@ -239,7 +243,7 @@ if __name__ == "__main__":
             Run the backtrader strategy with limited CPU usage.
             """
             # TODO: チャートのロジックモデルを作成
-            model_logic: logic_model.IModel = bk_logic_model.IniFileModelByOpt(
+            ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByOpt(
                 logic_filepath=pathlib.Path(args.logic_data_filepath),
                 # 最適化戦略を登録するメソッド
                 regist_opt=modules.strategy.rsi.RSIStrategy.add_opt,
@@ -251,6 +255,14 @@ if __name__ == "__main__":
                     target=limit_cpu_usage, args=(args.cpu_limit_power_percent)
                 )
                 monitor_process.start()
+
+            # トレードエンジン作成
+            ctrl: controller_interface.IController = bk_controller.Controller(
+                leverage=args.leverage,
+                b_opt=True,
+                cpu_count=args.cpu_count,
+                cerebro=ctrl_model.Cerebro,
+            )
 
             # 利用するロジックのインスタンス生成
             # use_logic = modules.logics.rsi.RSILogic(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import modules.model.market.market_intareface as interface
+import modules.model.market.interface as interface
 import pathlib
 import backtrader as bt
 import pandas as pd

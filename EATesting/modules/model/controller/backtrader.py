@@ -1,11 +1,16 @@
 import modules.model.controller.model as model
 import modules.strategy.interface.analyzer_interface as analyzer_interface
-import modules.controller.interface as interface
 import pathlib
+import backtrader as bt
 
 
 # テストロジックのモデル
 class IniFileModelByTest(model.IniFileBaseModel):
+
+    @property
+    def Cerebro(self) -> bt.Cerebro:
+        return self.__cerebro
+
     def __init__(
         self,
         logic_filepath: pathlib.Path,
@@ -18,8 +23,11 @@ class IniFileModelByTest(model.IniFileBaseModel):
         self.__regist_strategy_func = regist_strategey
         self.__regist_analyzer_func = regist_analyzer
 
-    def output_strategy(self, engine: interface.IController) -> int:
-        self.__regist_strategy_func(engine.cerebro, self.get_param("test"))
+        # Cerebroの初期化
+        self.__cerebro = bt.Cerebro()
+
+    def output_strategy(self) -> int:
+        self.__regist_strategy_func(self.__cerebro, self.get_param("test"))
         return 0
 
     def analayzer_class(self) -> type[analyzer_interface.IAnalyzer]:
@@ -37,9 +45,11 @@ class IniFileModelByOpt(model.IniFileBaseModel):
     ) -> None:
         super().__init__(logic_filepath=logic_filepath)
         self.__regist_opt_func = regist_opt
+        # Cerebroの初期化
+        self.__cerebro = bt.Cerebro()
 
-    def output_strategy(self, engine: interface.IController) -> int:
-        return self.__regist_opt_func(engine.cerebro, self.get_param("opt"))
+    def output_strategy(self) -> int:
+        return self.__regist_opt_func(self.__cerebro, self.get_param("opt"))
 
     def analayzer_class(self) -> type[analyzer_interface.IAnalyzer]:
         return None
