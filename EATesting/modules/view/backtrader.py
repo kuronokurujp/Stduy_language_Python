@@ -3,6 +3,7 @@ import modules.view.interface as view_interface
 import modules.strategy.interface.analyzer_interface as analyzer_interface
 import pathlib
 import pandas as pd
+import backtrader as bt
 
 # hvplotを使用するために必要
 import hvplot.pandas
@@ -33,10 +34,15 @@ class SaveChartView(view_interface.IView):
     def plot(self, strategy, *args, **kwargs):
         # 結果を設定して描画
         self.__strategy = strategy
+        self.begin_draw()
         self.draw()
+        self.end_draw()
 
     def log(self, msg: str) -> None:
         print(msg)
+
+    def begin_draw(self) -> None:
+        pass
 
     def draw(self) -> None:
         # カスタムアナライザーからデータを取得
@@ -127,6 +133,7 @@ class SaveChartView(view_interface.IView):
         # チャートファイル作成
         hvplot.save(candlestick, filename=self.__save_filepath.as_posix())
 
+    def end_draw(self) -> None:
         self.log(
             msg=f"チャートを '{self.__save_filepath.as_posix()}' に保存しました。Webブラウザで開いてください。"
         )
@@ -135,13 +142,21 @@ class SaveChartView(view_interface.IView):
 # 最適化テストした結果を表示するビュー
 class OptView(view_interface.IView):
 
-    def __init__(self, total: int) -> None:
+    def __init__(self, total: int, cerebro: bt.Cerebro) -> None:
         super().__init__()
 
-        self.pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total)
+        self.__pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total)
+        self.__cerebro = cerebro
+
+    # 最適化の１処理が終わったに呼ばれるコールバック
+    def __optimizer_callbacks(self, cb):
+        self.__pbar.update()
 
     def log(self, msg: str) -> None:
         print(msg)
+
+    def begin_draw(self) -> None:
+        self.__cerebro.optcallback(self.__optimizer_callbacks)
 
     def draw(self) -> None:
         # 最適化結果の取得
@@ -176,6 +191,6 @@ class OptView(view_interface.IView):
             print("トレード回数: ", result[0].p.trades)
             print("パラメータ: ", result[0].p._getkwargs())
 
-    # 最適化の１処理が終わったに呼ばれるコールバック
-    def optimizer_callbacks(self, cb):
-        self.pbar.update()
+    def end_draw(self) -> None:
+        if self.__pbar is not None:
+            self.__pbar.close()

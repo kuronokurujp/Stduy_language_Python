@@ -9,5 +9,13 @@ class IView(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def begin_draw(self) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def draw(self) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def end_draw(self) -> None:
         raise NotImplementedError()
