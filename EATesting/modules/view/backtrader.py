@@ -10,9 +10,6 @@ import hvplot.pandas
 import holoviews as hv
 from bokeh.models import HoverTool
 
-# 日本の祝日を考慮するため
-import jpholiday
-
 from tqdm import tqdm
 
 hv.extension("bokeh")
@@ -50,11 +47,17 @@ class SaveChartView(view_interface.IView):
             self.__strategy.analyzers.custom_analyzer
         )
 
+        # 取引データを取得
         dates = custom_analyzer.date_values
         close_values = custom_analyzer.close_values
         open_values = custom_analyzer.open_values
         high_values = custom_analyzer.high_values
         low_values = custom_analyzer.low_values
+        # TODO: 買いシグナルリスト
+        order_buy_signals = custom_analyzer.order_buy_signals
+        # TODO: 買い決済シグナルリスト
+        # TODO: 売りシグナルリスト
+        # TODO: 売り決済シグナルリスト
 
         # データフレームの作成
         data = pd.DataFrame(
@@ -64,21 +67,11 @@ class SaveChartView(view_interface.IView):
                 "open": open_values,
                 "high": high_values,
                 "low": low_values,
+                "order_buy": order_buy_signals,
             }
         )
 
-        # 土日祝日を除いたデータのみを残す
-        business_days = data["datetime"].index[
-            data["datetime"].apply(
-                lambda x: x.weekday() < 5 and not jpholiday.is_holiday(x)
-            )
-        ]
-
-        # 営業日のみを使ったデータフレームを作成
-        filtered_data = data.loc[business_days]
-
-        # 整数のインデックスを作成し、指定した間隔で増加
-        filtered_data = filtered_data.reset_index(drop=True)
+        filtered_data = data.reset_index(drop=True)
         filtered_data["index"] = range(len(filtered_data))
 
         # ローソク足のtooltip情報に日付を入れる
@@ -110,6 +103,12 @@ class SaveChartView(view_interface.IView):
             bar_width=1.0,
         )
 
+        # 買いシグナルのプロット
+        buy_signals_plot = filtered_data.hvplot.scatter(
+            x="index",
+            y="order_buy",
+        )
+
         # ラベルの間隔をデータ量に応じて計算
         label_interval = max(1, len(filtered_data) // 300)
 
@@ -119,8 +118,12 @@ class SaveChartView(view_interface.IView):
             for i in range(0, len(filtered_data), label_interval)
         ]
 
+        # TODO: チャートのオーバーレイ
+        # キャンドルと売買シグナルとインジケーターを合成
+        final_plot = candlestick * buy_signals_plot
+
         xLen = min(800, len(filtered_data))
-        candlestick = candlestick.opts(
+        final_plot = final_plot.opts(
             xlabel="",
             # ラベルが重ならないように角度をつける
             xrotation=45,
@@ -131,7 +134,7 @@ class SaveChartView(view_interface.IView):
         )
 
         # チャートファイル作成
-        hvplot.save(candlestick, filename=self.__save_filepath.as_posix())
+        hvplot.save(final_plot, filename=self.__save_filepath.as_posix())
 
     def end_draw(self) -> None:
         self.log(
@@ -151,6 +154,17 @@ class OptView(view_interface.IView):
     # 最適化の１処理が終わったに呼ばれるコールバック
     def __optimizer_callbacks(self, cb):
         self.__pbar.update()
+
+    # backtraderが呼び出すメソッド
+    def show(self):
+        # チャートファイル出力をするクラスなので表示処理はない
+        pass
+
+    # backtraderが呼び出すメソッド
+    def plot(self, strategy, *args, **kwargs):
+        # 結果を設定して描画
+        self.__strategy = strategy
+        self.draw()
 
     def log(self, msg: str) -> None:
         print(msg)
@@ -175,7 +189,7 @@ class OptView(view_interface.IView):
             print("==================================================")
 
         # トレードをしていないパラメータは除外する
-        best_results = [result for result in results if result[0].p.trades > 0]
+        best_results = [result for result in self.__strategy if result[0].p.trades > 0]
         if len(best_results) <= 0:
             print("トレードを一度もしていない結果しかなかった")
 

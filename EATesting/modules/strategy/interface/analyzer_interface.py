@@ -18,3 +18,15 @@ class IAnalyzer:
 
     def open_values(self) -> np.ndarray:
         raise NotImplementedError()
+
+    def order_buy_signals(self) -> np.ndarray:
+        raise NotImplementedError()
+
+    def order_sell_signals(self) -> np.ndarray:
+        raise NotImplementedError()
+
+    def close_buy_signals(self) -> np.ndarray:
+        raise NotImplementedError()
+
+    def close_sell_signals(self) -> np.ndarray:
+        raise NotImplementedError()

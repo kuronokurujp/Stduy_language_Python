@@ -48,7 +48,11 @@ class Controller(interface.IController):
         # commisionは手数料
         self.__cerebro.broker.setcommission(commission=0)
 
+        # 発注時のタイミングは次の時間軸の初め値にする
+        self.__cerebro.broker.set_coc(False)
+
         # ポジジョンサイズを変える事でレバレッジを変える
+        # 取引数量を固定値で設定
         self.__cerebro.addsizer(bt.sizers.FixedSize, stake=self.leverage)
 
         if self.b_opt is False:
