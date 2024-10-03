@@ -5,6 +5,7 @@ Sample Python List
 ## 説明
 
 -   プログラミング言語 Python の学習用
+-   Python 開発経験値を身に着けるためにツール/ゲーム/ Web サイトなど作成したアプリ一覧
 
 ## 免責事項
 
@@ -26,10 +27,10 @@ Sample Python List
     -   pyenv をインストールする方法
         1. windows 用のパッケージ管理ソフト「Chocolatey」を導入
             - 以下のサイトを参考にしてインストールした
-            - [Chocolatey の導入方法](https://zenn.dev/kazuma_r5/articles/a6d2608446ebdf)
+            - [Chocolatey の導入方法](https://zenn.dev/kazuma_r5/articles/a6d2608446ebdf/)
         1. Chocolate を使って pyenv をインストール
             - 以下のサイトの項目「pyenv インストール」を参考にしてインストールした
-            - [Windows に pyenv を導入する方法](https://progtext.net/programming/win-pyenv/)
+            - [Windows に pyenv を導入する方法](https://zenn.dev/kazuma_r5/articles/a6d2608446ebdf)
         1. pyenv がインストールか確認
             - PowerShell を開いて以下のコマンドを実行
                 - pyenv --version
@@ -47,7 +48,7 @@ Sample Python List
     -   仮想環境を動かすため PowerShell の ps ファイルを実行するものがある
     -   しかし PowerShell の環境によっては ps ファイルを実行不可能な設定なのもある
 
-        -   .\venv\Scripts\activateを実行すると以下のエラーが出た
+        -   .\venv\Scripts\activate を実行すると以下のエラーが出た
             ..\venv\Scripts\Activate.ps1 を読み込むことができません。
         -   原因 1: PowerShell の安全装置の一つであるスクリプト不許可の設定がされている
 
@@ -230,7 +231,7 @@ Sample Python List
     - pip でインストール
         - pip install pytest
 1. tests ディレクトリを作成
-    1. 作成したディレクトリに****init**.py** を作成
+    1. 作成したディレクトリに\***\*init**.py\*\* を作成
         - これを作成しないと自作パッケージのインポートでうまくいかずテストが実行できない
 1. py ファイルを作成
     - test_xxx の関数を作成する
@@ -287,8 +288,7 @@ Sample Python List
 ## 単純作業をシェル or バッチファイルで自動化
 
 -   Shell ディレクトリにまとめている
--   自動化リスト
-    -   新規開発プロジェクトを作成
+    -   Python プロジェクトの自動作成バッチファイルがある
 
 ## Django
 
