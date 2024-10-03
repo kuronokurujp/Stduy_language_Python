@@ -66,6 +66,13 @@ if __name__ == "__main__":
         help="logic data file",
     )
 
+    # データ保存するファイルパス
+    parser.add_argument(
+        "save_filepath",
+        type=str,
+        default="data\\test\\holoviews_datashader_candlestick",
+    )
+
     # 解析タイプがOptの時のCPUパワータイプ
     parser.add_argument(
         "--cpu_count",
@@ -88,6 +95,8 @@ if __name__ == "__main__":
     )
     # 取引のレバレッジ
     parser.add_argument("--leverage", type=float, default=1.0, help="取引のレバレッジ")
+    # アラート設定
+    parser.add_argument("--alert", type=int, default=1)
 
     monitor_process = None
     try:
@@ -95,6 +104,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         b_test: bool = args.mode == "test"
         b_opt: bool = args.mode == "opt"
+        b_alert: bool =args.alert == 1
 
         # テストも最適化の設定がない状態
         if not b_test and not b_opt:
@@ -114,9 +124,7 @@ if __name__ == "__main__":
 
         if b_test:
             view: bk_view.SaveChartView = bk_view.SaveChartView(
-                save_filepath=pathlib.Path(
-                    "data\\test\\holoviews_datashader_candlestick.html"
-                )
+                save_filepath=pathlib.Path(args.save_filepath)
             )
 
             # チャートのロジックモデルを作成
@@ -139,7 +147,8 @@ if __name__ == "__main__":
             # トレードテスト開始
             ctrl.run(controller_model=ctrl_model, market_model=market_model, view=view)
 
-            show_alert(title="終了", msg="テストが終わりました")
+            if b_alert:
+                show_alert(title="終了", msg="テストが終わりました")
 
         # TODO: 最適化処理はまったくリファクタリングしていないのでテスト処理が終わったらする
         else:
@@ -163,7 +172,8 @@ if __name__ == "__main__":
             # トレードテスト開始
             ctrl.run(controller_model=ctrl_model, market_model=market_model, view=view)
 
-            show_alert(title="終了", msg="最適化が終わりました")
+            if b_alert:
+                show_alert(title="終了", msg="最適化が終わりました")
 
     except ValueError as ve:
         print(f"ValueError: {ve}")

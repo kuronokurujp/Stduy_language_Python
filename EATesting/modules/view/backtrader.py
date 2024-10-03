@@ -22,6 +22,10 @@ class SaveChartView(view_interface.IView):
     def __init__(self, save_filepath: pathlib.Path) -> None:
         super().__init__()
         self.__save_filepath = save_filepath
+        # フォルダパスを抽出してフォルダを作成する
+        directory = self.__save_filepath.parent
+        # ディレクトリを作成（存在しない場合のみ）
+        directory.mkdir(parents=True, exist_ok=True)
 
     # backtraderが呼び出すメソッド
     def show(self):
