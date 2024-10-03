@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import backtrader as bt
+import numpy as np
 
 import modules.strategy.backtrader.backtrader_strategy as strategy
 import modules.strategy.backtrader.backtrader_analyzer as analyzer
@@ -14,18 +15,19 @@ class RSIAnalyzer(analyzer.BaseAnalyzer):
         self.rsi_min_values = []
         self.rsi_max_values = []
 
-    def _next(self):
+    def next(self):
         super().next()
 
         self.rsi_min_values.append(self.strategy.rsi_min[0])
         self.rsi_max_values.append(self.strategy.rsi_max[0])
 
-    def get_analysis(self) -> dict:
-        data_dict: dict = super().get_analysis()
-        data_dict["rsi_min_values"] = self.rsi_min_values
-        data_dict["rsi_max_values"] = self.rsi_max_values
-
-        return data_dict
+    # インジケーターグループを取得
+    @property
+    def ind_dict(self) -> dict[str, np.ndarray]:
+        return {
+            "rsi_min": np.array(self.rsi_min_values),
+            "rsi_max": np.array(self.rsi_max_values),
+        }
 
 
 # Backtraderシステムに依存した作るになっている
@@ -125,9 +127,6 @@ class RSIStrategy(strategy.BaseStrategy):
 
         rsi_min_value = self.rsi_min[0]
         rsi_max_value = self.rsi_max[0]
-
-        # RSIの値、日時、終値を保存
-        self.rsi_values.append(rsi_min_value)
 
         # パラメータによってキャンセルする
         # クロス後の決済なのにクロス前の値が入っているのはおかしい

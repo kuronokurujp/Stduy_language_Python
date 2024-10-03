@@ -60,6 +60,11 @@ class BaseAnalyzer(analyzer_interface.IAnalyzer, bt.Analyzer):
     def close_sell_signals(self) -> np.ndarray:
         return np.array(self.__close_sell_signals)
 
+    # インジケーターグループを取得
+    @property
+    def ind_dict(self) -> dict[str, np.ndarray]:
+        return dict()
+
     def next(self):
         st: bk_st.BaseStrategy = self.strategy
         data = st.data

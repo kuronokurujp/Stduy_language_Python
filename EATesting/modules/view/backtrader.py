@@ -4,6 +4,7 @@ import modules.strategy.interface.analyzer_interface as analyzer_interface
 import pathlib
 import pandas as pd
 import backtrader as bt
+import numpy as np
 
 # hvplotを使用するために必要
 import hvplot.pandas
@@ -53,17 +54,17 @@ class SaveChartView(view_interface.IView):
         open_values = custom_analyzer.open_values
         high_values = custom_analyzer.high_values
         low_values = custom_analyzer.low_values
-        # TODO: 買いシグナルリスト
+        # 買いシグナルリスト
         order_buy_signals = custom_analyzer.order_buy_signals
-        # TODO: 買い決済シグナルリスト
+        # 買い決済シグナルリスト
         close_buy_signals = custom_analyzer.close_buy_signals
-        # TODO: 売りシグナルリスト
+        # 売りシグナルリスト
         order_sell_signals = custom_analyzer.order_sell_signals
-        # TODO: 売り決済シグナルリスト
+        # 売り決済シグナルリスト
         close_sell_signals = custom_analyzer.close_sell_signals
 
         # データフレームの作成
-        data = pd.DataFrame(
+        data: pd.DataFrame = pd.DataFrame(
             {
                 "datetime": dates,
                 "close": close_values,
@@ -76,6 +77,11 @@ class SaveChartView(view_interface.IView):
                 "close_sell": close_sell_signals,
             }
         )
+
+        # インジケーターグループを取得
+        ind_dict: dict[str, np.ndarray] = custom_analyzer.ind_dict
+        for key, values in ind_dict.items():
+            data[key] = values
 
         filtered_data = data.reset_index(drop=True)
         filtered_data["index"] = range(len(filtered_data))
@@ -101,80 +107,108 @@ class SaveChartView(view_interface.IView):
             hover_cols=["datetime"],
             tools=[hover, "pan", "wheel_zoom", "box_zoom", "reset"],
             grid=True,
-            width=1200,
-            height=400,
             neg_color="indianred",
             pos_color="chartreuse",
             line_color="gray",
             bar_width=1.0,
         )
 
+        signal_labels_plots: list[hv.Labels] = []
+
         # 買い注文シグナルのプロット
         # データに表示するテキストを入れる必要がある
         filtered_data["order_buy_text"] = "買新規"
         # テキストのスケール値を変えることできない？
-        order_buy_signal_labels_plot = hv.Labels(
-            data=filtered_data, kdims=["index", "order_buy"], vdims=["order_buy_text"]
-        ).opts(
-            text_color="blue",
+        signal_labels_plots.append(
+            hv.Labels(
+                data=filtered_data,
+                kdims=["index", "order_buy"],
+                vdims=["order_buy_text"],
+            ).opts(
+                text_color="blue",
+            )
         )
 
         # 買いクローズシグナルのプロット
         filtered_data["close_buy_text"] = "買転売"
-        close_buy_signals_labels_plot = hv.Labels(
-            data=filtered_data, kdims=["index", "close_buy"], vdims=["close_buy_text"]
-        ).opts(
-            text_color="red",
+        signal_labels_plots.append(
+            hv.Labels(
+                data=filtered_data,
+                kdims=["index", "close_buy"],
+                vdims=["close_buy_text"],
+            ).opts(
+                text_color="red",
+            )
         )
 
         # 売り新規のシグナルプロット
         filtered_data["order_sell_text"] = "売新規"
-        order_sell_signals_labels_plot = hv.Labels(
-            data=filtered_data, kdims=["index", "order_sell"], vdims=["order_sell_text"]
-        ).opts(
-            text_color="blue",
+        signal_labels_plots.append(
+            hv.Labels(
+                data=filtered_data,
+                kdims=["index", "order_sell"],
+                vdims=["order_sell_text"],
+            ).opts(
+                text_color="blue",
+            )
         )
 
         # 売りクローズシグナルのプロット
         filtered_data["close_sell_text"] = "売転売"
-        close_sell_signals_labels_plot = hv.Labels(
-            data=filtered_data, kdims=["index", "close_sell"], vdims=["close_sell_text"]
-        ).opts(
-            text_color="red",
+        signal_labels_plots.append(
+            hv.Labels(
+                data=filtered_data,
+                kdims=["index", "close_sell"],
+                vdims=["close_sell_text"],
+            ).opts(
+                text_color="red",
+            )
         )
 
-        # ラベルの間隔をデータ量に応じて計算
-        label_interval = max(1, len(filtered_data) // 300)
-
-        # xticks を設定：ティックの位置は数値/ラベルは日付
-        xticks = [
-            (filtered_data["index"][i], filtered_data["datetime"][i])
-            for i in range(0, len(filtered_data), label_interval)
-        ]
-
-        # TODO: チャートのオーバーレイ
+        main_plot = candlestick
         # キャンドルと売買シグナルとインジケーターを合成
-        final_plot = (
-            candlestick
-            * order_buy_signal_labels_plot
-            * close_buy_signals_labels_plot
-            * order_sell_signals_labels_plot
-            * close_sell_signals_labels_plot
-        )
+        for add_main_plot in signal_labels_plots:
+            main_plot = main_plot * add_main_plot
+
+        # サブプロットがない場合はmain_plotがレイアウトになる
+        layout = main_plot
+
+        # チャートレイアウトの縦横サイズ
+        # サブプロットがあるとheight値を調整
+        layout_width: int = 1200
+        layout_height: int = 600
+
+        # インジケータープロットを作成してサブプロットで追加
+        # インジケーターリストからプロットリストを生成
+        sub_plots: list = []
+        for key, values in ind_dict.items():
+            sub_plots.append(filtered_data.hvplot.line(x="index", y=key))
+
+        if 0 < len(sub_plots):
+            layout_height = int(layout_height / 2)
+            compoite_sub_plot = sub_plots[0]
+            for i in range(1, len(sub_plots)):
+                compoite_sub_plot = compoite_sub_plot * sub_plots[i]
+            layout = (main_plot + compoite_sub_plot).cols(1)
 
         xLen = min(800, len(filtered_data))
-        final_plot = final_plot.opts(
-            xlabel="",
-            # ラベルが重ならないように角度をつける
-            xrotation=45,
-            xticks=xticks,
-            show_grid=True,
-            # x軸の範囲を調整することで横のスケールを調整できる
-            xlim=(0, xLen),
-        )
+
+        # 設定した全プロットのオプション設定
+        # x軸に日付を表示していないが
+        # サブプロットが入ると表示する空白面積が少なくなって日付を表示しても視認性が悪い
+        # かつ見ないのでx軸に日付は表示しないようにした
+        def apply_common_opts(plot):
+            return plot.opts(
+                xlim=(0, xLen),
+                show_grid=True,
+                width=layout_width,
+                height=layout_height,
+            )
+
+        layout = layout.map(apply_common_opts, hv.Element)
 
         # チャートファイル作成
-        hvplot.save(final_plot, filename=self.__save_filepath.as_posix())
+        hvplot.save(layout, filename=self.__save_filepath.as_posix())
 
     def end_draw(self) -> None:
         self.log(
