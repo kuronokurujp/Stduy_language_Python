@@ -18,6 +18,8 @@ class BaseAnalyzer(analyzer_interface.IAnalyzer, bt.Analyzer):
     __lows: list = []
     __buy_signal = np.nan
     __sell_signal = np.nan
+    __close_buy_signal = np.nan
+    __close_sell_signal = np.nan
 
     def __init__(self):
         pass
@@ -70,17 +72,34 @@ class BaseAnalyzer(analyzer_interface.IAnalyzer, bt.Analyzer):
         self.__lows.append(data.low[0])
 
         # nextメソッドでシグナルを追加しないと注文時間位置とずれがおきてしまう
+        # 買いの新規建て
         if not np.isnan(self.__buy_signal):
             self.__order_buy_signals.append(self.__buy_signal)
         else:
             self.__order_buy_signals.append(np.nan)
 
-        self.__order_sell_signals.append(st.sell_signal)
-        self.__close_buy_signals.append(st.close_buy_signal)
-        self.__close_sell_signals.append(st.close_sell_signal)
+        # 売りの新規建て
+        if not np.isnan(self.__sell_signal):
+            self.__order_sell_signals.append(self.__sell_signal)
+        else:
+            self.__order_sell_signals.append(np.nan)
+
+        # 買いのクローズ
+        if not np.isnan(self.__close_buy_signal):
+            self.__close_buy_signals.append(self.__close_buy_signal)
+        else:
+            self.__close_buy_signals.append(np.nan)
+
+        # 売りのクローズ
+        if not np.isnan(self.__close_sell_signal):
+            self.__close_sell_signals.append(self.__close_sell_signal)
+        else:
+            self.__close_sell_signals.append(np.nan)
 
         self.__buy_signal = np.nan
         self.__sell_signal = np.nan
+        self.__close_buy_signal = np.nan
+        self.__close_sell_signal = np.nan
 
     # 注文通知
     def notify_order(self, order):
@@ -90,10 +109,19 @@ class BaseAnalyzer(analyzer_interface.IAnalyzer, bt.Analyzer):
 
         # 注文が完了
         if order.status in [order.Completed]:
-            # 買いで注文
-            # 売り建てして売り転売した場合も呼ばれる？
+            # 注文情報を取得
+            order_type: str = order.info.get("name", "unknown")
+
+            # 買いの新規建て
             if order.isbuy():
-                self.__buy_signal = order.executed.price
-            # 売り建てと買い転売でよばれるぽい
+                if order_type == "entry":
+                    self.__buy_signal = order.executed.price
+                elif order_type == "exit":
+                    self.__close_sell_signal = order.executed.price
+
+            # 売りの新規建て
             elif order.issell():
-                self.__sell_signal = order.executed.price
+                if order_type == "entry":
+                    self.__sell_signal = order.executed.price
+                elif order_type == "exit":
+                    self.__close_buy_signal = order.executed.price

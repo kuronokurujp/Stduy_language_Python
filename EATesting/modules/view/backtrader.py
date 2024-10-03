@@ -56,8 +56,11 @@ class SaveChartView(view_interface.IView):
         # TODO: 買いシグナルリスト
         order_buy_signals = custom_analyzer.order_buy_signals
         # TODO: 買い決済シグナルリスト
+        close_buy_signals = custom_analyzer.close_buy_signals
         # TODO: 売りシグナルリスト
+        order_sell_signals = custom_analyzer.order_sell_signals
         # TODO: 売り決済シグナルリスト
+        close_sell_signals = custom_analyzer.close_sell_signals
 
         # データフレームの作成
         data = pd.DataFrame(
@@ -68,6 +71,9 @@ class SaveChartView(view_interface.IView):
                 "high": high_values,
                 "low": low_values,
                 "order_buy": order_buy_signals,
+                "close_buy": close_buy_signals,
+                "order_sell": order_sell_signals,
+                "close_sell": close_sell_signals,
             }
         )
 
@@ -103,10 +109,38 @@ class SaveChartView(view_interface.IView):
             bar_width=1.0,
         )
 
-        # 買いシグナルのプロット
-        buy_signals_plot = filtered_data.hvplot.scatter(
-            x="index",
-            y="order_buy",
+        # 買い注文シグナルのプロット
+        # データに表示するテキストを入れる必要がある
+        filtered_data["order_buy_text"] = "買新規"
+        # テキストのスケール値を変えることできない？
+        order_buy_signal_labels_plot = hv.Labels(
+            data=filtered_data, kdims=["index", "order_buy"], vdims=["order_buy_text"]
+        ).opts(
+            text_color="blue",
+        )
+
+        # 買いクローズシグナルのプロット
+        filtered_data["close_buy_text"] = "買転売"
+        close_buy_signals_labels_plot = hv.Labels(
+            data=filtered_data, kdims=["index", "close_buy"], vdims=["close_buy_text"]
+        ).opts(
+            text_color="red",
+        )
+
+        # 売り新規のシグナルプロット
+        filtered_data["order_sell_text"] = "売新規"
+        order_sell_signals_labels_plot = hv.Labels(
+            data=filtered_data, kdims=["index", "order_sell"], vdims=["order_sell_text"]
+        ).opts(
+            text_color="blue",
+        )
+
+        # 売りクローズシグナルのプロット
+        filtered_data["close_sell_text"] = "売転売"
+        close_sell_signals_labels_plot = hv.Labels(
+            data=filtered_data, kdims=["index", "close_sell"], vdims=["close_sell_text"]
+        ).opts(
+            text_color="red",
         )
 
         # ラベルの間隔をデータ量に応じて計算
@@ -120,7 +154,13 @@ class SaveChartView(view_interface.IView):
 
         # TODO: チャートのオーバーレイ
         # キャンドルと売買シグナルとインジケーターを合成
-        final_plot = candlestick * buy_signals_plot
+        final_plot = (
+            candlestick
+            * order_buy_signal_labels_plot
+            * close_buy_signals_labels_plot
+            * order_sell_signals_labels_plot
+            * close_sell_signals_labels_plot
+        )
 
         xLen = min(800, len(filtered_data))
         final_plot = final_plot.opts(

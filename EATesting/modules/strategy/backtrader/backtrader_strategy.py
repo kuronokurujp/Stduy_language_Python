@@ -14,11 +14,6 @@ class BaseStrategy(bt.Strategy):
     buyprice = None
     buycomm = None
 
-    buy_signal = np.nan
-    sell_signal = np.nan
-    close_buy_signal = np.nan
-    close_sell_signal = np.nan
-
     @property
     def is_opt(self) -> bool:
         return self.__b_opt
@@ -45,21 +40,13 @@ class BaseStrategy(bt.Strategy):
 
         # 最適化中かどうかを判別
         if self.__b_opt is False:
-            self.buy_signal = np.nan
-            self.sell_signal = np.nan
-            self.close_buy_signal = np.nan
-            self.close_sell_signal = np.nan
 
             self.trade_log = []  # 取引履歴を記録
             self.rsi_values = []  # RSIの値を保存するリスト
 
     # ローソク足更新のたびに呼ばれる
     def next(self):
-        if not self.__b_opt:
-            self.buy_signal = np.nan
-            self.sell_signal = np.nan
-            self.close_buy_signal = np.nan
-            self.close_sell_signal = np.nan
+        pass
 
     # 戦略取引が終了した時に呼ばれる
     def stop(self):
@@ -80,10 +67,6 @@ class BaseStrategy(bt.Strategy):
                     doprint=True,
                 )
 
-            # TODO: ここで記載はOK？
-            if not self.__b_opt:
-                self.close_buy_signal = self.data.close[0]
-
             self.p.trades = self.p.trades + 1
 
     # 注文通知
@@ -94,12 +77,15 @@ class BaseStrategy(bt.Strategy):
 
         # 注文が完了
         if order.status in [order.Completed]:
-            # 買いで注文
-            # 売り建てして売り転売した場合も呼ばれる？
+            # 注文情報を取得
+            order_type: str = order.info.get("name", "unknown")
+
+            # 買い新規と売り転売
             if order.isbuy():
-                # TODO:
-                # if not self.__b_opt:
-                #    self.buy_signal = self.data.close[0]
+                if order_type == "entry":
+                    self._log("買新規", doprint=self.params.printlog)
+                elif order_type == "exit":
+                    self._log("売転売", doprint=self.params.printlog)
 
                 self._log(
                     "買い約定: 取引数量(%.2f), 価格(%.2f), 取引額(%.2f), 手数料(%.2f)"
@@ -111,6 +97,7 @@ class BaseStrategy(bt.Strategy):
                     ),
                     doprint=self.params.printlog,
                 )
+
                 self.trade_log.append(
                     {
                         "datetime": self.datas[0].datetime.datetime(0),
@@ -122,10 +109,12 @@ class BaseStrategy(bt.Strategy):
                 self.buyprice = order.executed.price
                 self.buycomm = order.executed.comm
 
-            # 売り建てと買い転売でよばれるぽい
+            # 売り建てと買い転売
             elif order.issell():
-                if not self.__b_opt:
-                    self.sell_signal = self.data.close[0]
+                if order_type == "entry":
+                    self._log("売新規", doprint=self.params.printlog)
+                elif order_type == "exit":
+                    self._log("買転売", doprint=self.params.printlog)
 
                 self._log(
                     "売り約定: 取引数量(%.2f), 価格(%.2f), 取引額(%.2f), 手数料(%.2f)"
@@ -162,6 +151,8 @@ class BaseStrategy(bt.Strategy):
 
     def _buy(self):
         self.__order = self.buy()
+        # 注文かどうかの識別情報を設定
+        self.__order.addinfo(name="entry")
 
         self.__b_buy = True
         self.__b_sell = False
@@ -170,6 +161,8 @@ class BaseStrategy(bt.Strategy):
 
     def _sell(self):
         self.__order = self.sell()
+        # 注文かどうかの識別情報を設定
+        self.__order.addinfo(name="entry")
 
         self.__b_buy = False
         self.__b_sell = True
@@ -178,6 +171,8 @@ class BaseStrategy(bt.Strategy):
 
     def _close(self, msg: str = None):
         self.__order = self.close()
+        # 決済かどうかの識別情報を設定
+        self.__order.addinfo(name="exit")
 
         return self.__order
 
