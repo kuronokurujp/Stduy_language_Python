@@ -52,7 +52,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
     # 解析タイプ
     parser.add_argument("mode", type=str, default="test", help="test or opt")
-    parser.add_argument("logic", type=str, default="rsi", help="logic type(rsi)")
     # 銘柄のデータタイプ
     parser.add_argument("data_type", type=str, default="csv", help="yahoo or csv file")
     # 銘柄のデータタイプがcsvならcsvファイルパス指定
@@ -127,14 +126,20 @@ if __name__ == "__main__":
                 save_filepath=pathlib.Path(args.save_filepath)
             )
 
+            def get_strategy_func(logic_name: str):
+                return modules.strategy.rsi.RSIStrategy.add_strategy
+
+            def get_analyzer_class_func(logic_name: str):
+                return modules.strategy.rsi.RSIStrategy.analyzer_class
+
             # チャートのロジックモデルを作成
             ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByTest(
                 logic_filepath=pathlib.Path(args.logic_data_filepath),
                 cash=int(args.cash),
                 # 戦略を登録するメソッド
-                regist_strategey=modules.strategy.rsi.RSIStrategy.add_strategy,
+                regist_strategey=lambda name: get_strategy_func(logic_name=name),
                 # 解析を登録するメソッド
-                regist_analyzer=modules.strategy.rsi.RSIStrategy.analyzer_class,
+                regist_analyzer=lambda name: get_analyzer_class_func(logic_name=name),
             )
 
             # トレードエンジン作成

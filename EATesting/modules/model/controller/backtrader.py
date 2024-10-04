@@ -28,11 +28,14 @@ class IniFileModelByTest(model.IniFileBaseModel):
         self.__cerebro = bt.Cerebro()
 
     def output_strategy(self) -> int:
-        self.__regist_strategy_func(self.__cerebro, self.get_param("test"))
+        func = self.__regist_strategy_func(self.get_param("logic")["type"])
+        func(self.__cerebro, self.get_param("test"))
+
         return 0
 
     def analayzer_class(self) -> type[analyzer_interface.IAnalyzer]:
-        return self.__regist_analyzer_func()
+        func = self.__regist_analyzer_func(self.get_param("logic")["type"])
+        return func()
 
 
 # 最適化ロジックのモデル
@@ -51,7 +54,8 @@ class IniFileModelByOpt(model.IniFileBaseModel):
         self.__cerebro = bt.Cerebro()
 
     def output_strategy(self) -> int:
-        return self.__regist_opt_func(self.__cerebro, self.get_param("opt"))
+        func = self.__regist_opt_func(self.get_param("logic")["type"])
+        return func(self.__cerebro, self.get_param("opt"))
 
     def analayzer_class(self) -> type[analyzer_interface.IAnalyzer]:
         return None
