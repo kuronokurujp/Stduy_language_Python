@@ -44,7 +44,8 @@ class Controller(interface.IController):
         self.__cerebro.adddata(market_model.prices_format_backtrader())
 
         # 初期資金を設定
-        self.__cerebro.broker.set_cash(1000000)
+        self.__cerebro.broker.set_cash(controller_model.get_cash())
+
         # レバレッジを変える
         # commisionは手数料
         self.__cerebro.broker.setcommission(commission=0)

@@ -14,12 +14,13 @@ class IniFileModelByTest(model.IniFileBaseModel):
     def __init__(
         self,
         logic_filepath: pathlib.Path,
+        cash: int,
         # 戦略を登録するメソッド
         regist_strategey,
         # 解析を登録するメソッド
         regist_analyzer,
     ) -> None:
-        super().__init__(logic_filepath=logic_filepath)
+        super().__init__(logic_filepath=logic_filepath, cash=cash)
         self.__regist_strategy_func = regist_strategey
         self.__regist_analyzer_func = regist_analyzer
 
@@ -40,10 +41,11 @@ class IniFileModelByOpt(model.IniFileBaseModel):
     def __init__(
         self,
         logic_filepath: pathlib.Path,
+        cash: int,
         # 最適化戦略を登録するメソッド
         regist_opt,
     ) -> None:
-        super().__init__(logic_filepath=logic_filepath)
+        super().__init__(logic_filepath=logic_filepath, cash=cash)
         self.__regist_opt_func = regist_opt
         # Cerebroの初期化
         self.__cerebro = bt.Cerebro()

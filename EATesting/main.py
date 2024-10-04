@@ -95,6 +95,8 @@ if __name__ == "__main__":
     )
     # 取引のレバレッジ
     parser.add_argument("--leverage", type=float, default=1.0, help="取引のレバレッジ")
+    # 初期資金
+    parser.add_argument("--cash", type=int, default=1000000, help="初期資金")
     # アラート設定
     parser.add_argument("--alert", type=int, default=1)
 
@@ -128,6 +130,7 @@ if __name__ == "__main__":
             # チャートのロジックモデルを作成
             ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByTest(
                 logic_filepath=pathlib.Path(args.logic_data_filepath),
+                cash=int(args.cash),
                 # 戦略を登録するメソッド
                 regist_strategey=modules.strategy.rsi.RSIStrategy.add_strategy,
                 # 解析を登録するメソッド
@@ -155,6 +158,7 @@ if __name__ == "__main__":
             # TODO: チャートのロジックモデルを作成
             ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByOpt(
                 logic_filepath=pathlib.Path(args.logic_data_filepath),
+                cash=int(args.cash),
                 # 最適化戦略を登録するメソッド
                 regist_opt=modules.strategy.rsi.RSIStrategy.add_opt,
             )
