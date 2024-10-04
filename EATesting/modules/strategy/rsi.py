@@ -115,6 +115,22 @@ class RSIStrategy(strategy.BaseStrategy):
     def __init__(self):
         super().__init__(b_opt=self.params.optimizing, b_log=self.params.printlog)
 
+        # パラメータが不正かチェック
+        if self.params.rsi_min_period <= 1:
+            raise ValueError(
+                f"RSIの短期値が{self.params.rsi_min_period}で不適切なのでテストできない"
+            )
+
+        if self.params.rsi_max_period <= 1:
+            raise ValueError(
+                f"RSIの長期値が{self.params.rsi_max_period}で不適切なのでテストできない"
+            )
+
+        if self.params.rsi_blank_entry <= 0:
+            raise ValueError(
+                f"RSIのブランク値が{self.params.rsi_blank_entry}で不適切なのでテストできない"
+            )
+
         self.rsi_min = bt.indicators.RSI(
             self.data.close, period=self.params.rsi_min_period
         )
