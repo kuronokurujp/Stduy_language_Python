@@ -176,7 +176,7 @@ class BaseStrategy(bt.Strategy):
 
         return self.__order
 
-    def __stop(self, msg: str):
+    def _cancel(self, msg: str):
         if self.__b_opt is False:
             self._log(msg, doprint=True)
 

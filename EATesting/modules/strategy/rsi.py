@@ -133,22 +133,22 @@ class RSIStrategy(strategy.BaseStrategy):
         # クロス後の決済の場合はクロス後の値のみが入っているのが望ましい
         if self.params.close_type == "クロス後":
             if self.params.close_after_val == 0.0:
-                self.__stop("Cancle: クロス後決済モードなのにクロス後値が入っていない")
+                self._cancel("Cancle: クロス後決済モードなのにクロス後値が入っていない")
             elif self.params.close_before_val != 0.0:
-                self.__stop(
+                self._cancel(
                     "Cancle: クロス後決済モードなのにクロス前値が入っていたから"
                 )
         elif self.params.close_type == "クロス前":
             if self.params.close_before_val == 0.0:
-                self.__stop("Cancle: クロス前決済モードなのにクロス前値が入っていない")
+                self._cancel("Cancle: クロス前決済モードなのにクロス前値が入っていない")
             elif self.params.close_after_val != 0.0:
-                self.__stop(
+                self._cancel(
                     "Cancle: クロス前決済モードなのにクロス後値が入っていたから"
                 )
         else:
             if self.params.close_after_val != 0 or self.params.close_before_val != 0.0:
-                self.__stop(
-                    "Cancle: クロス決済モードなのにクロス後かクロス前の決済値が入っていたから"
+                self._cancel(
+                    "Cancle: クロス決済モードなのにクロス後かクロス前の関連値が入っていたから"
                 )
 
         # not in the market
