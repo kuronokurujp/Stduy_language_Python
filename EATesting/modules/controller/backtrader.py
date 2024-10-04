@@ -2,6 +2,7 @@
 import modules.controller.interface as interface
 import modules.model.market.interface as market_model_interface
 import modules.model.controller.model as ctrl_model_interface
+import modules.strategy.backtrader.backtrader_strategy as bk_st
 import modules.view.interface as view_interface
 
 import backtrader as bt
@@ -72,7 +73,13 @@ class Controller(interface.IController):
         self.__cerebro.addanalyzer(model.analayzer_class(), _name="custom_analyzer")
 
         # バックテストの実行
-        self.__cerebro.run()
+        strategies = self.__cerebro.run()
+
+        # キャンセルした場合はplotはしない
+        strategy_instance: bk_st.BaseStrategy = strategies[0]
+        if strategy_instance.is_cancel:
+            return
+
         # 独自ビューをプロッターとして設定
         # ビュー内でテスト結果の描画処理をする
         self.__cerebro.plot(plotter=view)

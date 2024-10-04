@@ -116,20 +116,58 @@ class RSIStrategy(strategy.BaseStrategy):
         super().__init__(b_opt=self.params.optimizing, b_log=self.params.printlog)
 
         # パラメータが不正かチェック
+        # raiseをすると例外になって最適化が途中で終わってしまうので不正パラメータならキャンセルにする
         if self.params.rsi_min_period <= 1:
-            raise ValueError(
+            self._cancel(
                 f"RSIの短期値が{self.params.rsi_min_period}で不適切なのでテストできない"
             )
+            return
 
         if self.params.rsi_max_period <= 1:
-            raise ValueError(
+            self._cancel(
                 f"RSIの長期値が{self.params.rsi_max_period}で不適切なのでテストできない"
             )
+            return
+
+        if self.params.rsi_max_period < self.params.rsi_min_period:
+            self._cancel(
+                f"RSIの短期と長期値が{self.params.rsi_max_period}で不適切なのでテストできない"
+            )
+            return
 
         if self.params.rsi_blank_entry <= 0:
-            raise ValueError(
+            self._cancel(
                 f"RSIのブランク値が{self.params.rsi_blank_entry}で不適切なのでテストできない"
             )
+            return
+
+        # パラメータによってキャンセルする
+        # クロス後の決済なのにクロス前の値が入っているのはおかしい
+        # クロス後の決済の場合はクロス後の値のみが入っているのが望ましい
+        if self.params.close_type == "クロス後":
+            if self.params.close_after_val == 0.0:
+                self._cancel("Cancle: クロス後決済モードなのにクロス後値が入っていない")
+                return
+            elif self.params.close_before_val != 0.0:
+                self._cancel(
+                    "Cancle: クロス後決済モードなのにクロス前値が入っていたから"
+                )
+                return
+        elif self.params.close_type == "クロス前":
+            if self.params.close_before_val == 0.0:
+                self._cancel("Cancle: クロス前決済モードなのにクロス前値が入っていない")
+                return
+            elif self.params.close_after_val != 0.0:
+                self._cancel(
+                    "Cancle: クロス前決済モードなのにクロス後値が入っていたから"
+                )
+                return
+        else:
+            if self.params.close_after_val != 0 or self.params.close_before_val != 0.0:
+                self._cancel(
+                    "Cancle: クロス決済モードなのにクロス後かクロス前の関連値が入っていたから"
+                )
+                return
 
         self.rsi_min = bt.indicators.RSI(
             self.data.close, period=self.params.rsi_min_period
@@ -143,29 +181,6 @@ class RSIStrategy(strategy.BaseStrategy):
 
         rsi_min_value = self.rsi_min[0]
         rsi_max_value = self.rsi_max[0]
-
-        # パラメータによってキャンセルする
-        # クロス後の決済なのにクロス前の値が入っているのはおかしい
-        # クロス後の決済の場合はクロス後の値のみが入っているのが望ましい
-        if self.params.close_type == "クロス後":
-            if self.params.close_after_val == 0.0:
-                self._cancel("Cancle: クロス後決済モードなのにクロス後値が入っていない")
-            elif self.params.close_before_val != 0.0:
-                self._cancel(
-                    "Cancle: クロス後決済モードなのにクロス前値が入っていたから"
-                )
-        elif self.params.close_type == "クロス前":
-            if self.params.close_before_val == 0.0:
-                self._cancel("Cancle: クロス前決済モードなのにクロス前値が入っていない")
-            elif self.params.close_after_val != 0.0:
-                self._cancel(
-                    "Cancle: クロス前決済モードなのにクロス後値が入っていたから"
-                )
-        else:
-            if self.params.close_after_val != 0 or self.params.close_before_val != 0.0:
-                self._cancel(
-                    "Cancle: クロス決済モードなのにクロス後かクロス前の関連値が入っていたから"
-                )
 
         # not in the market
         if not self.position:

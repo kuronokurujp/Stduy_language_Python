@@ -10,6 +10,7 @@ class BaseStrategy(bt.Strategy):
     __b_log: bool = False
     __b_buy: bool = True
     __b_sell: bool = False
+    __b_cancel: bool = False
     __order = None
     buyprice = None
     buycomm = None
@@ -30,9 +31,14 @@ class BaseStrategy(bt.Strategy):
     def is_sell_status(self) -> bool:
         return self.__b_sell
 
+    @property
+    def is_cancel(self) -> bool:
+        return self.__b_cancel
+
     def __init__(self, b_opt: bool, b_log: bool):
         self.__b_opt = b_opt
         self.__b_log = b_log
+        self.__b_cancel = False
 
         self.p.value = 0
         self.p.trades = 0
@@ -181,6 +187,7 @@ class BaseStrategy(bt.Strategy):
             self._log(msg, doprint=True)
 
         self.env.runstop()
+        self.__b_cancel = True
 
     def _log(self, txt, dt=None, doprint=False):
         """Logging function fot this strategy"""
