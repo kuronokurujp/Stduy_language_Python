@@ -14,10 +14,16 @@ class Model(interface.IModel):
         super().__init__()
         self.file_path = file_path
 
-    def load(
+    def load(self, datetext: str):
+        dates: list[str] = str.split(datetext, "/")
+        start_date: pd.Timestamp = pd.Timestamp(dates[0])
+        end_date: pd.Timestamp = pd.Timestamp(dates[1])
+        self.load_by_start_to_end(start_date=start_date, end_date=end_date)
+
+    def load_by_start_to_end(
         self,
-        start_date: pd.Timestamp = pd.Timestamp("2023-01-01"),
-        end_date: pd.Timestamp = pd.Timestamp("2024-01-01"),
+        start_date: pd.Timestamp,
+        end_date: pd.Timestamp,
     ) -> None:
         # CSVファイルを読み込む
         csv_data: pd.DataFrame = pd.read_csv(

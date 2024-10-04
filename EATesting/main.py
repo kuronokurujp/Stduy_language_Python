@@ -104,7 +104,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         b_test: bool = args.mode == "test"
         b_opt: bool = args.mode == "opt"
-        b_alert: bool =args.alert == 1
+        b_alert: bool = args.alert == 1
 
         # テストも最適化の設定がない状態
         if not b_test and not b_opt:
@@ -115,12 +115,10 @@ if __name__ == "__main__":
             args.csv_filepath,
         )
 
-        # 指定された期間でデータをフィルタリング
-        # TODO: loadメソッド内に文字列解析して開始と終わりの日付を作る
-        dates: list[str] = str.split(args.start_to_end, "/")
-        start_date: pd.Timestamp = pd.Timestamp(dates[0])
-        end_date: pd.Timestamp = pd.Timestamp(dates[1])
-        market_model.load(start_date=start_date, end_date=end_date)
+        # 指定期間の銘柄データをロード
+        # テキストフォーマットはyyyy-mm-dd/yyyy-mm-dd
+        # 左が開始, 右が終了
+        market_model.load(datetext=args.start_to_end)
 
         if b_test:
             view: bk_view.SaveChartView = bk_view.SaveChartView(
