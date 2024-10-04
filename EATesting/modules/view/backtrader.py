@@ -195,7 +195,13 @@ class SaveChartView(view_interface.IView):
                 compoite_sub_plot = compoite_sub_plot * sub_plots[i]
             layout = (main_plot + compoite_sub_plot).cols(1)
 
-        xLen = min(800, len(filtered_data))
+        # 表示したい範囲の幅を設定
+        # 必要に応じて調整
+        window_width = 800
+
+        # x軸の表示範囲を計算
+        x_start = max(0, len(filtered_data) - window_width)
+        x_end = len(filtered_data)
 
         # 設定した全プロットのオプション設定
         # x軸に日付を表示していないが
@@ -203,7 +209,7 @@ class SaveChartView(view_interface.IView):
         # かつ見ないのでx軸に日付は表示しないようにした
         def apply_common_opts(plot):
             return plot.opts(
-                xlim=(0, xLen),
+                xlim=(x_start, x_end),
                 show_grid=True,
                 width=layout_width,
                 height=layout_height,
