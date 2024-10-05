@@ -43,7 +43,7 @@ class SaveChartView(view_interface.IView):
     def log(self, msg: str) -> None:
         print(msg)
 
-    def begin_draw(self) -> None:
+    def begin_draw(self, **kwargs) -> None:
         pass
 
     def draw(self) -> None:
@@ -220,10 +220,22 @@ class SaveChartView(view_interface.IView):
         # チャートファイル作成
         hvplot.save(layout, filename=self.__save_filepath.as_posix())
 
-    def end_draw(self) -> None:
+    def end_draw(self, **kwargs) -> None:
         self.log(
             msg=f"チャートを '{self.__save_filepath.as_posix()}' に保存しました。Webブラウザで開いてください。"
         )
+
+
+い
+# 最適化進捗表示
+_g_opt_process_print: tqdm = None
+
+
+# 最適化の１処理が終わったに呼ばれるコールバック
+# マルチスレッドで実行されるのメモリ共有やデッドロックに注意
+def _call_optimizer_with_multi_thread(cb):
+    global _g_opt_process_print
+    _g_opt_process_print.update()
 
 
 # 最適化テストした結果を表示するビュー
@@ -246,13 +258,27 @@ class OptView(view_interface.IView):
     def log(self, msg: str) -> None:
         print(msg)
 
-    def begin_draw(self) -> None:
+    def begin_draw(self, **kwargs) -> None:
         total: int = kwargs["total"]
+
+        global _g_opt_process_print
+        _g_opt_process_print = tqdm(smoothing=0.05, desc="最適化進捗率", total=total)
+
         cerebro: bt.cerebro = kwargs["cerebro"]
-        self.__pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total)
-        cerebro.optcallback(self.__optimizer_callbacks)
+        cerebro.optcallback(_call_optimizer_with_multi_thread)
 
     def draw(self) -> None:
+        pass
+
+    def end_draw(self, **kwargs) -> None:
+
+        global _g_opt_process_print
+        if _g_opt_process_print is not None:
+            _g_opt_process_print.close()
+            _g_opt_process_print = None
+
+        results = kwargs["result"]
+
         # 最適化結果の取得
         if False:
             print("==================================================")
@@ -269,7 +295,7 @@ class OptView(view_interface.IView):
             print("==================================================")
 
         # トレードをしていないパラメータは除外する
-        best_results = [result for result in self.__strategy if result[0].p.trades > 0]
+        best_results = [result for result in results if result[0].p.trades > 0]
         if len(best_results) <= 0:
             print("トレードを一度もしていない結果しかなかった")
 
@@ -284,11 +310,3 @@ class OptView(view_interface.IView):
             print("資金: ", result[0].p.value)
             print("トレード回数: ", result[0].p.trades)
             print("パラメータ: ", result[0].p._getkwargs())
-
-    def end_draw(self) -> None:
-        if self.__pbar is not None:
-            self.__pbar.close()
-
-    # 最適化の１処理が終わったに呼ばれるコールバック
-    def __optimizer_callbacks(self, cb):
-        self.__pbar.update()

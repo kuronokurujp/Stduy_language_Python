@@ -110,8 +110,8 @@ class Controller(interface.IController):
         )
 
         # バックテストの実行
-        # view.begin_draw()
+        view.begin_draw(total=total, cerebro=cerebro)
 
-        self.result_strategy = cerebro.run(maxcpus=self.cpu_count)
+        results = cerebro.run(maxcpus=self.cpu_count)
 
-        # view.end_draw()
+        view.end_draw(result=results)

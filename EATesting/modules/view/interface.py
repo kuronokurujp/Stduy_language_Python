@@ -9,7 +9,7 @@ class IView(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def begin_draw(self) -> None:
+    def begin_draw(self, **kwargs) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -17,5 +17,5 @@ class IView(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def end_draw(self) -> None:
+    def end_draw(self, **kwargs) -> None:
         raise NotImplementedError()
