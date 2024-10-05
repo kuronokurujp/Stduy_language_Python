@@ -166,5 +166,6 @@ media
 .python-version
 
 data/logic/rsi/test/*
+data/logic/rsi/opt/*
 data/test/*
 

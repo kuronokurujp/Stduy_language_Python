@@ -50,8 +50,6 @@ if __name__ == "__main__":
 
     # 引数パーサの作成
     parser = argparse.ArgumentParser(description="")
-    # 解析タイプ
-    parser.add_argument("mode", type=str, default="test", help="test or opt")
     # 銘柄のデータタイプ
     parser.add_argument("data_type", type=str, default="csv", help="yahoo or csv file")
     # 銘柄のデータタイプがcsvならcsvファイルパス指定
@@ -103,13 +101,7 @@ if __name__ == "__main__":
     try:
         # 引数の解析
         args = parser.parse_args()
-        b_test: bool = args.mode == "test"
-        b_opt: bool = args.mode == "opt"
         b_alert: bool = args.alert == 1
-
-        # テストも最適化の設定がない状態
-        if not b_test and not b_opt:
-            raise ValueError(f"Unknown type '{args.type}' specified")
 
         # マーケットモデルを作成
         market_model: market_model_interface.IModel = market_csv.Model(
@@ -121,25 +113,36 @@ if __name__ == "__main__":
         # 左が開始, 右が終了
         market_model.load(datetext=args.start_to_end)
 
-        if b_test:
+        def get_strategy_func(logic_name: str):
+            return modules.strategy.rsi.RSIStrategy.add_strategy
+
+        def get_analyzer_class_func(logic_name: str):
+            return modules.strategy.rsi.RSIStrategy.analyzer_class
+
+        # チャートのロジックモデルを作成
+        test_ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByTest(
+            logic_filepath=pathlib.Path(args.logic_data_filepath),
+            cash=int(args.cash),
+            # 戦略を登録するメソッド
+            regist_strategey=lambda name: get_strategy_func(logic_name=name),
+            # 解析を登録するメソッド
+            regist_analyzer=lambda name: get_analyzer_class_func(logic_name=name),
+        )
+
+        def get_opt_func(logic_name: str):
+            return modules.strategy.rsi.RSIStrategy.add_opt
+
+        # TODO: チャートのロジックモデルを作成
+        opt_ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByOpt(
+            logic_filepath=pathlib.Path(args.logic_data_filepath),
+            cash=int(args.cash),
+            # 最適化戦略を登録するメソッド
+            regist_opt=lambda name: get_opt_func(name),
+        )
+
+        if test_ctrl_model.is_strategy_mode():
             view: bk_view.SaveChartView = bk_view.SaveChartView(
                 save_filepath=pathlib.Path(args.save_filepath)
-            )
-
-            def get_strategy_func(logic_name: str):
-                return modules.strategy.rsi.RSIStrategy.add_strategy
-
-            def get_analyzer_class_func(logic_name: str):
-                return modules.strategy.rsi.RSIStrategy.analyzer_class
-
-            # チャートのロジックモデルを作成
-            ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByTest(
-                logic_filepath=pathlib.Path(args.logic_data_filepath),
-                cash=int(args.cash),
-                # 戦略を登録するメソッド
-                regist_strategey=lambda name: get_strategy_func(logic_name=name),
-                # 解析を登録するメソッド
-                regist_analyzer=lambda name: get_analyzer_class_func(logic_name=name),
             )
 
             # トレードエンジン作成
@@ -147,11 +150,13 @@ if __name__ == "__main__":
                 leverage=args.leverage,
                 b_opt=False,
                 cpu_count=args.cpu_count,
-                cerebro=ctrl_model.Cerebro,
+                cerebro=test_ctrl_model.Cerebro,
             )
 
             # トレードテスト開始
-            ctrl.run(controller_model=ctrl_model, market_model=market_model, view=view)
+            ctrl.run(
+                controller_model=test_ctrl_model, market_model=market_model, view=view
+            )
 
             if b_alert:
                 show_alert(title="終了", msg="テストが終わりました")
@@ -160,24 +165,18 @@ if __name__ == "__main__":
         else:
             view: bk_view.OptView = bk_view.OptView()
 
-            # TODO: チャートのロジックモデルを作成
-            ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByOpt(
-                logic_filepath=pathlib.Path(args.logic_data_filepath),
-                cash=int(args.cash),
-                # 最適化戦略を登録するメソッド
-                regist_opt=modules.strategy.rsi.RSIStrategy.add_opt,
-            )
-
             # トレードエンジン作成
             ctrl: controller_interface.IController = bk_controller.Controller(
                 leverage=args.leverage,
                 b_opt=True,
                 cpu_count=args.cpu_count,
-                cerebro=ctrl_model.Cerebro,
+                cerebro=opt_ctrl_model.Cerebro,
             )
 
             # トレードテスト開始
-            ctrl.run(controller_model=ctrl_model, market_model=market_model, view=view)
+            ctrl.run(
+                controller_model=opt_ctrl_model, market_model=market_model, view=view
+            )
 
             if b_alert:
                 show_alert(title="終了", msg="最適化が終わりました")

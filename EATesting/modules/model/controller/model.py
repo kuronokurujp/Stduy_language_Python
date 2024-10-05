@@ -6,6 +6,11 @@ import modules.strategy.interface.analyzer_interface as analyzer_interface
 
 class IModel(metaclass=abc.ABCMeta):
 
+    # 通常検証モードか
+    @abc.abstractmethod
+    def is_strategy_mode(self):
+        raise NotImplementedError()
+
     # テストの資金
     @abc.abstractmethod
     def get_cash(self):
@@ -38,6 +43,15 @@ class IniFileBaseModel(IModel):
             self.__config.read_file(configfile)
 
         self.__cash = cash
+
+    # 通常検証モードかどうか
+    def is_strategy_mode(self):
+        try:
+            self.get_param("test")
+        except Exception as identifier:
+            return False
+
+        return True
 
     # テストの資金
     def get_cash(self):
