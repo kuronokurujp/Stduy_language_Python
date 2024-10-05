@@ -229,15 +229,8 @@ class SaveChartView(view_interface.IView):
 # 最適化テストした結果を表示するビュー
 class OptView(view_interface.IView):
 
-    def __init__(self, total: int, cerebro: bt.Cerebro) -> None:
+    def __init__(self) -> None:
         super().__init__()
-
-        self.__pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total)
-        self.__cerebro = cerebro
-
-    # 最適化の１処理が終わったに呼ばれるコールバック
-    def __optimizer_callbacks(self, cb):
-        self.__pbar.update()
 
     # backtraderが呼び出すメソッド
     def show(self):
@@ -254,7 +247,10 @@ class OptView(view_interface.IView):
         print(msg)
 
     def begin_draw(self) -> None:
-        self.__cerebro.optcallback(self.__optimizer_callbacks)
+        total: int = kwargs["total"]
+        cerebro: bt.cerebro = kwargs["cerebro"]
+        self.__pbar = tqdm(smoothing=0.05, desc="最適化進捗率", total=total)
+        cerebro.optcallback(self.__optimizer_callbacks)
 
     def draw(self) -> None:
         # 最適化結果の取得
@@ -292,3 +288,7 @@ class OptView(view_interface.IView):
     def end_draw(self) -> None:
         if self.__pbar is not None:
             self.__pbar.close()
+
+    # 最適化の１処理が終わったに呼ばれるコールバック
+    def __optimizer_callbacks(self, cb):
+        self.__pbar.update()

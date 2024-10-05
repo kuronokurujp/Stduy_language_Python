@@ -150,7 +150,6 @@ if __name__ == "__main__":
                 leverage=args.leverage,
                 b_opt=False,
                 cpu_count=args.cpu_count,
-                cerebro=test_ctrl_model.Cerebro,
             )
 
             # トレードテスト開始
@@ -170,7 +169,6 @@ if __name__ == "__main__":
                 leverage=args.leverage,
                 b_opt=True,
                 cpu_count=args.cpu_count,
-                cerebro=opt_ctrl_model.Cerebro,
             )
 
             # トレードテスト開始

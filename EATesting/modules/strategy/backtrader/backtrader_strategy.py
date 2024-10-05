@@ -44,12 +44,6 @@ class BaseStrategy(bt.Strategy):
         self.p.trades = 0
         self.data_close = self.datas[0].close
 
-        # 最適化中かどうかを判別
-        if self.__b_opt is False:
-
-            self.trade_log = []  # 取引履歴を記録
-            self.rsi_values = []  # RSIの値を保存するリスト
-
     # ローソク足更新のたびに呼ばれる
     def next(self):
         pass
@@ -104,17 +98,6 @@ class BaseStrategy(bt.Strategy):
                     doprint=self.params.printlog,
                 )
 
-                self.trade_log.append(
-                    {
-                        "datetime": self.datas[0].datetime.datetime(0),
-                        "price": self.data_close[0],
-                        "action": "buy",
-                    }
-                )
-
-                self.buyprice = order.executed.price
-                self.buycomm = order.executed.comm
-
             # 売り建てと買い転売
             elif order.issell():
                 if order_type == "entry":
@@ -131,13 +114,6 @@ class BaseStrategy(bt.Strategy):
                         order.executed.comm,
                     ),
                     doprint=self.__b_log,
-                )
-                self.trade_log.append(
-                    {
-                        "datetime": self.datas[0].datetime.datetime(0),
-                        "price": self.data_close[0],
-                        "action": "sell",
-                    }
                 )
 
             self.bar_executed = len(self)

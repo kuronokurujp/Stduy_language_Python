@@ -17,11 +17,9 @@ class Controller(interface.IController):
     result_strategy = None
     cpu_count: int = 0
     pbar = None
-    __cerebro: bt.Cerebro
 
     def __init__(
         self,
-        cerebro: bt.Cerebro,
         leverage: float = 1.0,
         b_opt: bool = False,
         cpu_count: int = 0,
@@ -31,8 +29,6 @@ class Controller(interface.IController):
         self.leverage = leverage
         self.b_opt = b_opt
         self.cpu_count = cpu_count
-        # Cerebroは外部から設定される
-        self.__cerebro = cerebro
 
     def run(
         self,
@@ -40,41 +36,46 @@ class Controller(interface.IController):
         market_model: market_model_interface.IModel,
         view: view_interface.IView,
     ) -> None:
+        cerebro = bt.Cerebro()
+
         # データをCerebroに追加
-        self.__cerebro.adddata(market_model.prices_format_backtrader())
+        cerebro.adddata(market_model.prices_format_backtrader())
 
         # 初期資金を設定
-        self.__cerebro.broker.set_cash(controller_model.get_cash())
+        cerebro.broker.set_cash(controller_model.get_cash())
 
         # レバレッジを変える
         # commisionは手数料
-        self.__cerebro.broker.setcommission(commission=0)
+        cerebro.broker.setcommission(commission=0)
 
         # 発注時のタイミングは次の時間軸の初め値にする
-        self.__cerebro.broker.set_coc(False)
+        cerebro.broker.set_coc(False)
 
         # ポジジョンサイズを変える事でレバレッジを変える
         # 取引数量を固定値で設定
-        self.__cerebro.addsizer(bt.sizers.FixedSize, stake=self.leverage)
+        cerebro.addsizer(bt.sizers.FixedSize, stake=self.leverage)
 
         if self.b_opt is False:
-            self.__test(model=controller_model, view=view)
+            self.__test(cerebro=cerebro, model=controller_model, view=view)
         else:
-            self.__opt(model=controller_model, view=view)
+            self.__opt(cerebro=cerebro, model=controller_model, view=view)
 
     def __test(
         self,
+        cerebro: bt.Cerebro,
         model: ctrl_model_interface.IModel,
         view: view_interface.IView,
     ):
         # 利用する戦略をエンジンにアタッチ
-        model.output_strategy()
+        add_strategy_func = model.strategy_add_func()
+        # 処理によって取得する関数の引数が違う
+        add_strategy_func(cerebro, model.get_param("test"))
 
         # カスタム解析クラス登録
-        self.__cerebro.addanalyzer(model.analayzer_class(), _name="custom_analyzer")
+        cerebro.addanalyzer(model.analayzer_class(), _name="custom_analyzer")
 
         # バックテストの実行
-        strategies = self.__cerebro.run()
+        strategies = cerebro.run()
 
         # キャンセルした場合はplotはしない
         strategy_instance: bk_st.BaseStrategy = strategies[0]
@@ -83,14 +84,17 @@ class Controller(interface.IController):
 
         # 独自ビューをプロッターとして設定
         # ビュー内でテスト結果の描画処理をする
-        self.__cerebro.plot(plotter=view)
+        cerebro.plot(plotter=view)
 
     def __opt(
         self,
+        cerebro: bt.Cerebro,
         model: ctrl_model_interface.IModel,
         view: view_interface.IView,
     ):
-        total: int = model.output_strategy()
+        add_strategy_func = model.strategy_add_func()
+        total: int = add_strategy_func(cerebro, model.get_param("opt"))
+
         view.log(msg=f"検証回数({total}")
 
         # CPUを利用数を計算
@@ -106,9 +110,8 @@ class Controller(interface.IController):
         )
 
         # バックテストの実行
-        view.begin_draw()
+        # view.begin_draw()
 
-        self.result_strategy = self.__cerebro.run(maxcpus=self.cpu_count)
-        self.__cerebro.plot(plotter=view)
+        self.result_strategy = cerebro.run(maxcpus=self.cpu_count)
 
-        view.end_draw()
+        # view.end_draw()

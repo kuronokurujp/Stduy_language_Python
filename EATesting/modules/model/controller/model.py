@@ -22,7 +22,7 @@ class IModel(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def output_strategy(self) -> int:
+    def strategy_add_func(self) -> int:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -60,7 +60,7 @@ class IniFileBaseModel(IModel):
     def get_param(self, name: str):
         return self.__config[name]
 
-    def output_strategy(self) -> int:
+    def strategy_add_func(self) -> int:
         return 0
 
     def analayzer_class(self) -> type[analyzer_interface.IAnalyzer]:

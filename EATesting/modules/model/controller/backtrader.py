@@ -7,10 +7,6 @@ import backtrader as bt
 # テストロジックのモデル
 class IniFileModelByTest(model.IniFileBaseModel):
 
-    @property
-    def Cerebro(self) -> bt.Cerebro:
-        return self.__cerebro
-
     def __init__(
         self,
         logic_filepath: pathlib.Path,
@@ -24,10 +20,9 @@ class IniFileModelByTest(model.IniFileBaseModel):
         self.__regist_strategy_func = regist_strategey
         self.__regist_analyzer_func = regist_analyzer
 
-        # Cerebroの初期化
-        self.__cerebro = bt.Cerebro()
+    def strategy_add_func(self):
+        return self.__regist_strategy_func(self.get_param("logic")["type"])
 
-    def output_strategy(self) -> int:
         func = self.__regist_strategy_func(self.get_param("logic")["type"])
         func(self.__cerebro, self.get_param("test"))
 
@@ -50,10 +45,10 @@ class IniFileModelByOpt(model.IniFileBaseModel):
     ) -> None:
         super().__init__(logic_filepath=logic_filepath, cash=cash)
         self.__regist_opt_func = regist_opt
-        # Cerebroの初期化
-        self.__cerebro = bt.Cerebro()
 
-    def output_strategy(self) -> int:
+    def strategy_add_func(self):
+        return self.__regist_opt_func(self.get_param("logic")["type"])
+
         func = self.__regist_opt_func(self.get_param("logic")["type"])
         return func(self.__cerebro, self.get_param("opt"))
 
