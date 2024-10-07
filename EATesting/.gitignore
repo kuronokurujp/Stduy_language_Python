@@ -168,5 +168,6 @@ media
 data/logic/rsi/test/*
 data/logic/rsi/opt/*
 data/test/*
+data/opt/*
 output/*
 

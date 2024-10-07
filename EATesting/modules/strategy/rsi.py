@@ -41,8 +41,6 @@ class RSIStrategy(strategy.BaseStrategy):
         ("close_type", "クロス"),  # 'クロス', 'クロス前', 'クロス後'
         ("close_before_val", 0.0),
         ("close_after_val", 0.0),
-        ("printlog", True),
-        ("optimizing", False),
     )
 
     @staticmethod
@@ -106,14 +104,12 @@ class RSIStrategy(strategy.BaseStrategy):
             close_type=close_type,
             close_before_val=close_before_val,
             close_after_val=close_after_val,
-            printlog=False,
-            optimizing=True,
         )
 
         return total_combinations
 
     def __init__(self):
-        super().__init__(b_opt=self.params.optimizing, b_log=self.params.printlog)
+        super().__init__()
 
         # パラメータが不正かチェック
         # raiseをすると例外になって最適化が途中で終わってしまうので不正パラメータならキャンセルにする

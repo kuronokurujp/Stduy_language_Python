@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import csv
 import modules.view.interface as view_interface
 import modules.strategy.interface.analyzer_interface as analyzer_interface
 import pathlib
@@ -240,19 +241,14 @@ def _call_optimizer_with_multi_thread(cb):
 # 最適化テストした結果を表示するビュー
 class OptView(view_interface.IView):
 
-    def __init__(self) -> None:
+    __output_dirpath: pathlib.Path = None
+
+    def __init__(self, output_dirpath: pathlib.Path) -> None:
         super().__init__()
 
-    # backtraderが呼び出すメソッド
-    def show(self):
-        # チャートファイル出力をするクラスなので表示処理はない
-        pass
-
-    # backtraderが呼び出すメソッド
-    def plot(self, strategy, *args, **kwargs):
-        # 結果を設定して描画
-        self.__strategy = strategy
-        self.draw()
+        self.__output_dirpath = output_dirpath
+        # ディレクトリを作成（存在しない場合のみ）
+        self.__output_dirpath.mkdir(parents=True, exist_ok=True)
 
     def log(self, msg: str) -> None:
         print(msg)
@@ -276,7 +272,11 @@ class OptView(view_interface.IView):
             _g_opt_process_print.close()
             _g_opt_process_print = None
 
+        # 引数から必要なパラメータを取得
+        #  最適化結果リスト
         results = kwargs["result"]
+        # 初期資金
+        cash: int = kwargs["cash"]
 
         # 最適化結果の取得
         if False:
@@ -297,15 +297,43 @@ class OptView(view_interface.IView):
         best_results = [result for result in results if result[0].p.trades > 0]
         if len(best_results) <= 0:
             print("トレードを一度もしていない結果しかなかった")
+        else:
+            # 一番高い結果から降順にソート
+            best_results = sorted(
+                best_results, key=lambda x: x[0].p.value, reverse=True
+            )
 
-        # 一番高い結果から降順にソート
-        best_results = sorted(best_results, key=lambda x: x[0].p.value, reverse=True)
+            # TODO: 最適化の結果をリストで保存
+            self.__output_file(
+                output_path=self.__output_dirpath.joinpath("最適化結果.csv"),
+                results=best_results,
+                cash=cash,
+            )
 
-        # 1から20位までのリストを作る
-        top_20_results = best_results[:20]
+            print(f"フォルダ({self.__output_dirpath.as_posix()})に最適化結果を出力した")
 
+    def __output_file(self, output_path: pathlib.Path, results, cash: int):
         # リストの各要素の値を出力
-        for result in top_20_results:
-            print("資金: ", result[0].p.value)
-            print("トレード回数: ", result[0].p.trades)
-            print("パラメータ: ", result[0].p._getkwargs())
+        # TODO: パラメータ名のみ抜き出す
+        param_names: list = list(results[0][0].p._getkwargs().keys())
+
+        with open(
+            output_path.as_posix(), mode="w", newline="", encoding="utf-8"
+        ) as file:
+            # TODO: ヘッダー書き込み
+            writer = csv.writer(file)
+            writer.writerow(["資金", "資金増減", "トレード回数"] + param_names)
+
+            for result in results:
+                writer.writerow(
+                    [
+                        int(result[0].p.value),
+                        int(result[0].p.value) - cash,
+                        int(result[0].p.trades),
+                    ]
+                    + list(result[0].p._getkwargs().values())
+                )
+
+                # print("資金: ", result[0].p.value)
+                # print("トレード回数: ", result[0].p.trades)
+                # print("パラメータ: ", result[0].p._getkwargs())

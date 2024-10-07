@@ -12,8 +12,6 @@ class BaseStrategy(bt.Strategy):
     __b_sell: bool = False
     __b_cancel: bool = False
     __order = None
-    buyprice = None
-    buycomm = None
 
     @property
     def is_opt(self) -> bool:
@@ -35,9 +33,9 @@ class BaseStrategy(bt.Strategy):
     def is_cancel(self) -> bool:
         return self.__b_cancel
 
-    def __init__(self, b_opt: bool, b_log: bool):
-        self.__b_opt = b_opt
-        self.__b_log = b_log
+    def __init__(self):
+        self.__b_opt = bool(self.env._dooptimize)
+        self.__b_log = bool(self.env._dooptimize) is False  # b_log
         self.__b_cancel = False
 
         self.p.value = 0
@@ -83,9 +81,9 @@ class BaseStrategy(bt.Strategy):
             # 買い新規と売り転売
             if order.isbuy():
                 if order_type == "entry":
-                    self._log("買新規", doprint=self.params.printlog)
+                    self._log("買新規", doprint=self.is_log)
                 elif order_type == "exit":
-                    self._log("売転売", doprint=self.params.printlog)
+                    self._log("売転売", doprint=self.is_log)
 
                 self._log(
                     "買い約定: 取引数量(%.2f), 価格(%.2f), 取引額(%.2f), 手数料(%.2f)"
@@ -95,15 +93,15 @@ class BaseStrategy(bt.Strategy):
                         order.executed.value,
                         order.executed.comm,
                     ),
-                    doprint=self.params.printlog,
+                    doprint=self.is_log,
                 )
 
             # 売り建てと買い転売
             elif order.issell():
                 if order_type == "entry":
-                    self._log("売新規", doprint=self.params.printlog)
+                    self._log("売新規", doprint=self.is_log)
                 elif order_type == "exit":
-                    self._log("買転売", doprint=self.params.printlog)
+                    self._log("買転売", doprint=self.is_log)
 
                 self._log(
                     "売り約定: 取引数量(%.2f), 価格(%.2f), 取引額(%.2f), 手数料(%.2f)"

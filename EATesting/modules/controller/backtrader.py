@@ -114,4 +114,4 @@ class Controller(interface.IController):
 
         results = cerebro.run(maxcpus=self.cpu_count)
 
-        view.end_draw(result=results)
+        view.end_draw(result=results, cash=model.get_cash())

@@ -163,7 +163,9 @@ if __name__ == "__main__":
 
         # TODO: 最適化処理はまったくリファクタリングしていないのでテスト処理が終わったらする
         else:
-            view: bk_view.OptView = bk_view.OptView()
+            view: bk_view.OptView = bk_view.OptView(
+                output_dirpath=pathlib.Path(args.opt_save_dirpath)
+            )
 
             # トレードエンジン作成
             ctrl: controller_interface.IController = bk_controller.Controller(
