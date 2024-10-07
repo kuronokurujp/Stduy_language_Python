@@ -293,10 +293,16 @@ class OptView(view_interface.IView):
                     print(strat.p.trades)
             print("==================================================")
 
-        # トレードをしていないパラメータは除外する
-        best_results = [result for result in results if result[0].p.trades > 0]
+        # 以下の条件に該当するものは除外
+        # トレードしていない
+        # 利益がマイナス
+        best_results = [
+            result
+            for result in results
+            if (result[0].p.trades > 0) and (result[0].p.value - cash) > 0
+        ]
         if len(best_results) <= 0:
-            print("トレードを一度もしていない結果しかなかった")
+            self.log("トレードを一度もしていないか利益がマイナスの結果しかなかった")
         else:
             # 一番高い結果から降順にソート
             best_results = sorted(
@@ -310,17 +316,19 @@ class OptView(view_interface.IView):
                 cash=cash,
             )
 
-            print(f"フォルダ({self.__output_dirpath.as_posix()})に最適化結果を出力した")
+            self.log(
+                f"フォルダ({self.__output_dirpath.as_posix()})に最適化結果を出力した"
+            )
 
     def __output_file(self, output_path: pathlib.Path, results, cash: int):
         # リストの各要素の値を出力
-        # TODO: パラメータ名のみ抜き出す
+        # パラメータ名のみ抜き出す
         param_names: list = list(results[0][0].p._getkwargs().keys())
 
         with open(
             output_path.as_posix(), mode="w", newline="", encoding="utf-8"
         ) as file:
-            # TODO: ヘッダー書き込み
+            # ヘッダー書き込み
             writer = csv.writer(file)
             writer.writerow(["資金", "資金増減", "トレード回数"] + param_names)
 
