@@ -63,11 +63,18 @@ if __name__ == "__main__":
         help="logic data file",
     )
 
-    # データ保存するファイルパス
+    # ロジックテストしたチャートデータ保存するファイルパス
     parser.add_argument(
-        "save_filepath",
+        "--chart_save_filepath",
         type=str,
-        default="data\\test\\holoviews_datashader_candlestick",
+        default="data\\test\\chart.html",
+    )
+
+    # TODO: ロジックの最適化したデータを保存するディレクトリパス
+    parser.add_argument(
+        "--opt_save_dirpath",
+        type=str,
+        default="data\\opt",
     )
 
     # 解析タイプがOptの時のCPUパワータイプ
@@ -83,13 +90,7 @@ if __name__ == "__main__":
         default="2023-01-01/2024-01-01",
         help="取引の開始と終わりの日付",
     )
-    # CPUパワーリミット%
-    parser.add_argument(
-        "--cpu_limit_power_percent",
-        type=int,
-        default=100,
-        help="",
-    )
+
     # 取引のレバレッジ
     parser.add_argument("--leverage", type=float, default=1.0, help="取引のレバレッジ")
     # 初期資金
@@ -142,7 +143,7 @@ if __name__ == "__main__":
 
         if test_ctrl_model.is_strategy_mode():
             view: bk_view.SaveChartView = bk_view.SaveChartView(
-                save_filepath=pathlib.Path(args.save_filepath)
+                save_filepath=pathlib.Path(args.chart_save_filepath)
             )
 
             # トレードエンジン作成
