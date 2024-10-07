@@ -226,7 +226,6 @@ class SaveChartView(view_interface.IView):
         )
 
 
-い
 # 最適化進捗表示
 _g_opt_process_print: tqdm = None
 
