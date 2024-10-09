@@ -27,10 +27,9 @@ rd /s /q build
 rd /s /q dist
 del /q .\main.spec
 
-rem copy common/config.ini dist/common/config.ini
-rem copy common/log_config.json dist/common_log_config.json
-
 call ../venv/scripts/deactivate.bat
+
+xcopy "..\data" "%COPY_FOLDER_PATH%\data\" /e /c
 
 endlocal
 
