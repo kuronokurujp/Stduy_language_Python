@@ -6,6 +6,11 @@ import modules.strategy.interface.analyzer_interface as analyzer_interface
 
 class IModel(metaclass=abc.ABCMeta):
 
+    # エラーがあればメッセージがある
+    @abc.abstractmethod
+    def err_msg(self) -> str:
+        raise NotImplementedError()
+
     # 通常検証モードか
     @abc.abstractmethod
     def is_strategy_mode(self):
@@ -43,6 +48,11 @@ class IniFileBaseModel(IModel):
             self.__config.read_file(configfile)
 
         self.__cash = cash
+
+    # モデルがエラーであればメッセージを返す
+    def err_msg(self) -> str:
+        # モデルエラーになっているか判定してエラーメッセージを返す
+        return None
 
     # 通常検証モードかどうか
     def is_strategy_mode(self):

@@ -2,9 +2,9 @@
 # スタックトレースを表示するために追加
 import traceback
 
-import pandas as pd
 import pathlib
 
+import modules.common as common
 
 # EAロジッククラス
 import modules.strategy.rsi
@@ -22,20 +22,8 @@ import modules.controller.interface as controller_interface
 import modules.controller.backtrader as bk_controller
 
 # ビュークラス
+import modules.view.interface as view_interface
 import modules.view.backtrader as bk_view
-
-import tkinter as tk
-from tkinter import messagebox
-
-
-# 処理終了時のアラート表示
-def show_alert(title: str, msg: str):
-    # ベル音
-    print("\a")
-
-    root = tk.Tk()
-    root.withdraw()
-    messagebox.showwarning(title=title, message=msg)
 
 
 if __name__ == "__main__":
@@ -70,7 +58,7 @@ if __name__ == "__main__":
         default="data\\test\\chart.html",
     )
 
-    # TODO: ロジックの最適化したデータを保存するディレクトリパス
+    # ロジックの最適化したデータを保存するディレクトリパス
     parser.add_argument(
         "--opt_save_dirpath",
         type=str,
@@ -133,7 +121,7 @@ if __name__ == "__main__":
         def get_opt_func(logic_name: str):
             return modules.strategy.rsi.RSIStrategy.add_opt
 
-        # TODO: チャートのロジックモデルを作成
+        # チャートのロジックモデルを作成
         opt_ctrl_model: ctrl_model_interface.IModel = bk_model.IniFileModelByOpt(
             logic_filepath=pathlib.Path(args.logic_data_filepath),
             cash=int(args.cash),
@@ -141,58 +129,53 @@ if __name__ == "__main__":
             regist_opt=lambda name: get_opt_func(name),
         )
 
+        # トレードエンジン作成
+        ctrl: controller_interface.IController = bk_controller.Controller(
+            leverage=args.leverage,
+            cpu_count=args.cpu_count,
+        )
+
+        ctrl_model: ctrl_model_interface.IModel = None
+        ctrl_view: view_interface.IView = None
+
+        # 通常テストか最適化かで利用するモデルとビューを変える
         if test_ctrl_model.is_strategy_mode():
-            view: bk_view.SaveChartView = bk_view.SaveChartView(
-                save_filepath=pathlib.Path(args.chart_save_filepath)
+            ctrl_view = bk_view.SaveChartView(
+                save_filepath=pathlib.Path(args.chart_save_filepath), b_alert=b_alert
             )
-
-            # トレードエンジン作成
-            ctrl: controller_interface.IController = bk_controller.Controller(
-                leverage=args.leverage,
-                b_opt=False,
-                cpu_count=args.cpu_count,
-            )
-
-            # トレードテスト開始
-            ctrl.run(
-                controller_model=test_ctrl_model, market_model=market_model, view=view
-            )
-
-            if b_alert:
-                show_alert(title="終了", msg="テストが終わりました")
-
-        # TODO: 最適化処理はまったくリファクタリングしていないのでテスト処理が終わったらする
+            ctrl_model = test_ctrl_model
         else:
-            view: bk_view.OptView = bk_view.OptView(
-                output_dirpath=pathlib.Path(args.opt_save_dirpath)
+            ctrl_view = bk_view.OptView(
+                output_dirpath=pathlib.Path(args.opt_save_dirpath), b_alert=b_alert
             )
+            ctrl_model = opt_ctrl_model
 
-            # トレードエンジン作成
-            ctrl: controller_interface.IController = bk_controller.Controller(
-                leverage=args.leverage,
-                b_opt=True,
-                cpu_count=args.cpu_count,
-            )
-
-            # トレードテスト開始
-            ctrl.run(
-                controller_model=opt_ctrl_model, market_model=market_model, view=view
-            )
-
-            if b_alert:
-                show_alert(title="終了", msg="最適化が終わりました")
+        # トレードテスト開始
+        ctrl.run(model=ctrl_model, market_model=market_model, view=ctrl_view)
 
     except ValueError as ve:
         print(f"ValueError: {ve}")
         print(traceback.format_exc())
+        if b_alert:
+            common.show_alert(
+                title="エラー", msg="エラーになりました。ログをチェックしてください"
+            )
 
     except TypeError as te:
         print(f"TypeError: {te}")
         print(traceback.format_exc())
+        if b_alert:
+            common.show_alert(
+                title="エラー", msg="エラーになりました。ログをチェックしてください"
+            )
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         print(traceback.format_exc())
+        if b_alert:
+            common.show_alert(
+                title="エラー", msg="エラーになりました。ログをチェックしてください"
+            )
 
     finally:
         if monitor_process is not None:

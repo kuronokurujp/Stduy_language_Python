@@ -2,6 +2,7 @@
 import csv
 import modules.view.interface as view_interface
 import modules.strategy.interface.analyzer_interface as analyzer_interface
+import modules.common as common
 import pathlib
 import pandas as pd
 import backtrader as bt
@@ -20,9 +21,13 @@ hv.extension("bokeh")
 # テスト結果をチャートファイルにして保存するビュー
 class SaveChartView(view_interface.IView):
 
-    def __init__(self, save_filepath: pathlib.Path) -> None:
+    __b_alert: bool = True
+
+    def __init__(self, save_filepath: pathlib.Path, b_alert: bool = True) -> None:
         super().__init__()
         self.__save_filepath = save_filepath
+        self.__b_alert = b_alert
+
         # フォルダパスを抽出してフォルダを作成する
         directory = self.__save_filepath.parent
         # ディレクトリを作成（存在しない場合のみ）
@@ -222,9 +227,13 @@ class SaveChartView(view_interface.IView):
         hvplot.save(layout, filename=self.__save_filepath.as_posix())
 
     def end_draw(self, **kwargs) -> None:
-        self.log(
-            msg=f"チャートを '{self.__save_filepath.as_posix()}' に保存しました。Webブラウザで開いてください。"
+        msg: str = (
+            f"チャートを '{self.__save_filepath.as_posix()}' に保存しました。Webブラウザで開いてください。"
         )
+
+        self.log(msg=msg)
+        if self.__b_alert:
+            common.show_alert(title="テストが終わりました", msg=msg)
 
 
 # 最適化進捗表示
@@ -242,13 +251,15 @@ def _call_optimizer_with_multi_thread(cb):
 class OptView(view_interface.IView):
 
     __output_dirpath: pathlib.Path = None
+    __b_alert: bool = True
 
-    def __init__(self, output_dirpath: pathlib.Path) -> None:
+    def __init__(self, output_dirpath: pathlib.Path, b_alert: bool = True) -> None:
         super().__init__()
 
         self.__output_dirpath = output_dirpath
         # ディレクトリを作成（存在しない場合のみ）
         self.__output_dirpath.mkdir(parents=True, exist_ok=True)
+        self.__b_alert = b_alert
 
     def log(self, msg: str) -> None:
         print(msg)
@@ -278,21 +289,6 @@ class OptView(view_interface.IView):
         # 初期資金
         cash: int = kwargs["cash"]
 
-        # 最適化結果の取得
-        if False:
-            print("==================================================")
-            # 最適化結果の収集
-            for stratrun in results:
-                print("**************************************************")
-                for strat in stratrun:
-                    print("--------------------------------------------------")
-                    print(strat.p._getkwargs())
-                    # 残り残金
-                    print(strat.p.value)
-                    # トレード回数
-                    print(strat.p.trades)
-            print("==================================================")
-
         # 以下の条件に該当するものは除外
         # トレードしていない
         # 利益がマイナス
@@ -301,24 +297,28 @@ class OptView(view_interface.IView):
             for result in results
             if (result[0].p.trades > 0) and (result[0].p.value - cash) > 0
         ]
+
+        msg: str = ""
         if len(best_results) <= 0:
-            self.log("トレードを一度もしていないか利益がマイナスの結果しかなかった")
+            msg = "トレードを一度もしていないか利益がマイナスの結果しかなかった"
         else:
             # 一番高い結果から降順にソート
             best_results = sorted(
                 best_results, key=lambda x: x[0].p.value, reverse=True
             )
 
-            # TODO: 最適化の結果をリストで保存
+            # 最適化の結果をリストで保存
             self.__output_file(
                 output_path=self.__output_dirpath.joinpath("最適化結果.csv"),
                 results=best_results,
                 cash=cash,
             )
 
-            self.log(
-                f"フォルダ({self.__output_dirpath.as_posix()})に最適化結果を出力した"
-            )
+            msg = f"フォルダ({self.__output_dirpath.as_posix()})に最適化結果を出力した"
+
+        self.log(msg)
+        if self.__b_alert:
+            common.show_alert(title="最適化が終わりました", msg=msg)
 
     def __output_file(self, output_path: pathlib.Path, results, cash: int):
         # リストの各要素の値を出力

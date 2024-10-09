@@ -13,7 +13,6 @@ import multiprocessing
 class Controller(interface.IController):
     cerebro: bt.Cerebro = None
     leverage: float = 1.0
-    b_opt: bool = False
     result_strategy = None
     cpu_count: int = 0
     pbar = None
@@ -21,28 +20,30 @@ class Controller(interface.IController):
     def __init__(
         self,
         leverage: float = 1.0,
-        b_opt: bool = False,
         cpu_count: int = 0,
     ) -> None:
         super().__init__()
 
         self.leverage = leverage
-        self.b_opt = b_opt
         self.cpu_count = cpu_count
 
     def run(
         self,
-        controller_model: ctrl_model_interface.IModel,
+        model: ctrl_model_interface.IModel,
         market_model: market_model_interface.IModel,
         view: view_interface.IView,
     ) -> None:
+        # モデルが有効か
+        if model.err_msg() is not None:
+            raise ValueError(model.err_msg())
+
         cerebro = bt.Cerebro()
 
         # データをCerebroに追加
         cerebro.adddata(market_model.prices_format_backtrader())
 
         # 初期資金を設定
-        cerebro.broker.set_cash(controller_model.get_cash())
+        cerebro.broker.set_cash(model.get_cash())
 
         # レバレッジを変える
         # commisionは手数料
@@ -55,10 +56,10 @@ class Controller(interface.IController):
         # 取引数量を固定値で設定
         cerebro.addsizer(bt.sizers.FixedSize, stake=self.leverage)
 
-        if self.b_opt is False:
-            self.__test(cerebro=cerebro, model=controller_model, view=view)
+        if model.is_strategy_mode():
+            self.__test(cerebro=cerebro, model=model, view=view)
         else:
-            self.__opt(cerebro=cerebro, model=controller_model, view=view)
+            self.__opt(cerebro=cerebro, model=model, view=view)
 
     def __test(
         self,
