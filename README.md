@@ -11,19 +11,19 @@ Sample Python List
 
 このソフトウェアの使用または使用不可によって、いかなる問題が生じた場合も、著作者はその責任を負いません。バージョンアップや不具合に対する対応の責任も負わないものとします。
 
+# 利用ツール
+
+| ツール     |
+| ---------- |
+| pyenv      |
+| Chocolatey |
+| VSCode     |
+
 # 開発環境構築
 
 ## Pytnon のインストール
 
 -   win 版
-    -   MicrosoftStore からインストールする方法
-        1. vscode を開く
-        1. ctrl + `でターミナルを開いて移動する
-        1. 以下のコマンドを実行
-            > python
-        1. python が入っていないと MicrosoftStore が開いて python のダウンロード画面を出すのでダウンロードする
-        -   参考サイト
-            -   [Python+VSCode におすすめの拡張機能](https://qiita.com/momotar47279337/items/73157407ae824751afc4)
     -   pyenv をインストールする方法
         1. windows 用のパッケージ管理ソフト「Chocolatey」を導入
             - 以下のサイトを参考にしてインストールした
