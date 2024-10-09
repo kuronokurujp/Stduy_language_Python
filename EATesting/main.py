@@ -5,6 +5,8 @@ import traceback
 import pathlib
 
 import modules.common as common
+import modules.log.logger as logger
+import modules.log.interface as logger_interface
 
 # EAロジッククラス
 import modules.strategy.rsi
@@ -24,6 +26,13 @@ import modules.controller.backtrader as bk_controller
 # ビュークラス
 import modules.view.interface as view_interface
 import modules.view.backtrader as bk_view
+
+
+def err_msg(msg: str, logger_sys: logger_interface.ILoegger):
+    if logger_sys is None:
+        print(msg)
+    else:
+        logger_sys.err(msg)
 
 
 if __name__ == "__main__":
@@ -49,6 +58,13 @@ if __name__ == "__main__":
         type=str,
         default="",
         help="logic data file",
+    )
+
+    # ツールを動かすのに必要な設定ファイルを収めているディレクトリパス
+    parser.add_argument(
+        "config_dirpath",
+        type=str,
+        default="",
     )
 
     # ロジックテストしたチャートデータ保存するファイルパス
@@ -87,10 +103,22 @@ if __name__ == "__main__":
     parser.add_argument("--alert", type=int, default=1)
 
     monitor_process = None
+    logger_sys: logger_interface.ILoegger = None
     try:
         # 引数の解析
         args = parser.parse_args()
         b_alert: bool = args.alert == 1
+
+        config_dir: pathlib.Path = pathlib.Path(args.config_dirpath)
+        if config_dir.exists() is False:
+            raise ValueError(f"コンフィグディレクトリがない({config_dir.as_posix()})")
+
+        # ログシステムを作成
+        logger_sys = logger.AppLogger(
+            config_json_filepath=pathlib.Path.joinpath(config_dir, "log.json"),
+            log_dirpath=pathlib.Path("data/log"),
+        )
+        logger_sys.clearnup()
 
         # マーケットモデルを作成
         market_model: market_model_interface.IModel = market_csv.Model(
@@ -141,12 +169,16 @@ if __name__ == "__main__":
         # 通常テストか最適化かで利用するモデルとビューを変える
         if test_ctrl_model.is_strategy_mode():
             ctrl_view = bk_view.SaveChartView(
-                save_filepath=pathlib.Path(args.chart_save_filepath), b_alert=b_alert
+                save_filepath=pathlib.Path(args.chart_save_filepath),
+                logger_sys=logger_sys,
+                b_alert=b_alert,
             )
             ctrl_model = test_ctrl_model
         else:
             ctrl_view = bk_view.OptView(
-                output_dirpath=pathlib.Path(args.opt_save_dirpath), b_alert=b_alert
+                output_dirpath=pathlib.Path(args.opt_save_dirpath),
+                logger_sys=logger_sys,
+                b_alert=b_alert,
             )
             ctrl_model = opt_ctrl_model
 
@@ -154,20 +186,20 @@ if __name__ == "__main__":
         ctrl.run(model=ctrl_model, market_model=market_model, view=ctrl_view)
 
     except ValueError as ve:
-        print(f"ValueError: {ve}")
-        print(traceback.format_exc())
+        err_msg(f"ValueError: {ve}", logger_sys=logger_sys)
+        err_msg(traceback.format_exc(), logger_sys=logger_sys)
         if b_alert:
             common.show_alert(title="エラー", msg=ve)
 
     except TypeError as te:
-        print(f"TypeError: {te}")
-        print(traceback.format_exc())
+        err_msg(f"TypeError: {te}", logger_sys=logger_sys)
+        err_msg(traceback.format_exc(), logger_sys=logger_sys)
         if b_alert:
             common.show_alert(title="エラー", msg=te)
 
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        print(traceback.format_exc())
+        err_msg(f"An unexpected error occurred: {e}", logger_sys=logger_sys)
+        err_msg(traceback.format_exc(), logger_sys=logger_sys)
         if b_alert:
             common.show_alert(title="エラー", msg=e)
 

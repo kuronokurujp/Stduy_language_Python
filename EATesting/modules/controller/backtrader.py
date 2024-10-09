@@ -42,6 +42,11 @@ class Controller(interface.IController):
 
         cerebro = bt.Cerebro()
 
+        # マネージャーを使用してログQueueを作成
+        manager = multiprocessing.Manager()
+        log_queue = manager.Queue()
+        cerebro.log_queue = log_queue
+
         # データをCerebroに追加
         cerebro.adddata(market_model.prices_format_backtrader())
 
@@ -84,6 +89,10 @@ class Controller(interface.IController):
         # バックテストの実行
         strategies = cerebro.run()
 
+        while not cerebro.log_queue.empty():
+            log_message = cerebro.log_queue.get()
+            view.log(log_message)
+
         # キャンセルした場合はplotはしない
         strategy_instance: bk_st.BaseStrategy = strategies[0]
         if strategy_instance.is_cancel:
@@ -120,5 +129,9 @@ class Controller(interface.IController):
         view.begin_draw(total=total, cerebro=cerebro)
 
         results = cerebro.run(maxcpus=self.cpu_count)
+
+        while not cerebro.log_queue.empty():
+            log_message = cerebro.log_queue.get()
+            view.log(log_message)
 
         view.end_draw(result=results, cash=model.get_cash())

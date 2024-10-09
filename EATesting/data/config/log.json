@@ -1,0 +1,42 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "simple": {
+            "format": "%(asctime)s %(name)s:%(lineno)s %(funcName)s [%(levelname)s]: %(message)s"
+        }
+    },
+
+    "handlers": {
+        "consoleHandler": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout"
+        },
+        "fileHandler": {
+            "class": "logging.FileHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "filename": "to be replaced",
+            "encoding": "utf-8"
+        },
+        "printHandler": {
+            "class": "modules.log.logger.PrintHandler",
+            "level": "INFO",
+            "formatter": "simple"
+        }
+    },
+
+    "loggers": {
+        "modules.log.logger": {
+            "level": "DEBUG",
+            "handlers": ["fileHandler", "printHandler"],
+            "propagate": false
+        }
+    },
+
+    "root": {
+        "level": "INFO"
+    }
+}

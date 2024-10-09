@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import backtrader as bt
-import numpy as np
 import gc
 
 
@@ -35,7 +34,7 @@ class BaseStrategy(bt.Strategy):
 
     def __init__(self):
         self.__b_opt = bool(self.env._dooptimize)
-        self.__b_log = bool(self.env._dooptimize) is False  # b_log
+        self.__b_log = bool(self.env._dooptimize) is False
         self.__b_cancel = False
 
         self.p.value = 0
@@ -167,4 +166,8 @@ class BaseStrategy(bt.Strategy):
         """Logging function fot this strategy"""
         if doprint:
             dt = dt or self.datas[0].datetime.datetime(0)
-            print("%s, %s" % (dt.isoformat(), txt))
+            msg: str = "%s, %s" % (dt.isoformat(), txt)
+            # print(msg)
+
+            if self.cerebro.log_queue is not None:
+                self.cerebro.log_queue.put(msg)

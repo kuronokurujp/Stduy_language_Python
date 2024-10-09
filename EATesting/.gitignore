@@ -165,9 +165,7 @@ media
 # pyenvのローカルpythonバージョン情報
 .python-version
 
-data/logic/rsi/test/*
-data/logic/rsi/opt/*
-data/test/*
-data/opt/*
+data/log/*
+test_data/*
 output/*
 

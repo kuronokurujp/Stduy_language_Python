@@ -3,6 +3,7 @@ import csv
 import modules.view.interface as view_interface
 import modules.strategy.interface.analyzer_interface as analyzer_interface
 import modules.common as common
+import modules.log.interface as logger_interface
 import pathlib
 import pandas as pd
 import backtrader as bt
@@ -22,10 +23,17 @@ hv.extension("bokeh")
 class SaveChartView(view_interface.IView):
 
     __b_alert: bool = True
+    __logger_sys: logger_interface.ILoegger = None
 
-    def __init__(self, save_filepath: pathlib.Path, b_alert: bool = True) -> None:
+    def __init__(
+        self,
+        save_filepath: pathlib.Path,
+        logger_sys: logger_interface.ILoegger,
+        b_alert: bool = True,
+    ) -> None:
         super().__init__()
         self.__save_filepath = save_filepath
+        self.__logger_sys = logger_sys
         self.__b_alert = b_alert
 
         # フォルダパスを抽出してフォルダを作成する
@@ -47,7 +55,7 @@ class SaveChartView(view_interface.IView):
         self.end_draw()
 
     def log(self, msg: str) -> None:
-        print(msg)
+        self.__logger_sys.info(msg)
 
     def begin_draw(self, **kwargs) -> None:
         pass
@@ -252,17 +260,25 @@ class OptView(view_interface.IView):
 
     __output_dirpath: pathlib.Path = None
     __b_alert: bool = True
+    __logger_sys: logger_interface.ILoegger = None
 
-    def __init__(self, output_dirpath: pathlib.Path, b_alert: bool = True) -> None:
+    def __init__(
+        self,
+        output_dirpath: pathlib.Path,
+        logger_sys: logger_interface.ILoegger,
+        b_alert: bool = True,
+    ) -> None:
         super().__init__()
 
         self.__output_dirpath = output_dirpath
+        self.__logger_sys = logger_sys
+
         # ディレクトリを作成（存在しない場合のみ）
         self.__output_dirpath.mkdir(parents=True, exist_ok=True)
         self.__b_alert = b_alert
 
     def log(self, msg: str) -> None:
-        print(msg)
+        self.__logger_sys.info(msg)
 
     def begin_draw(self, **kwargs) -> None:
         total: int = kwargs["total"]
