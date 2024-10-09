@@ -165,7 +165,7 @@ media
 # pyenvのローカルpythonバージョン情報
 .python-version
 
-data/log/*
+log/*
 test_data/*
 output/*
 

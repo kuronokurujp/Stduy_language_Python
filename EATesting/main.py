@@ -67,6 +67,13 @@ if __name__ == "__main__":
         default="",
     )
 
+    # ログファイル出力するディレクトリパス
+    parser.add_argument(
+        "log_dirpath",
+        type=str,
+        default="",
+    )
+
     # ロジックテストしたチャートデータ保存するファイルパス
     parser.add_argument(
         "--chart_save_filepath",
@@ -116,7 +123,7 @@ if __name__ == "__main__":
         # ログシステムを作成
         logger_sys = logger.AppLogger(
             config_json_filepath=pathlib.Path.joinpath(config_dir, "log.json"),
-            log_dirpath=pathlib.Path("data/log"),
+            log_dirpath=pathlib.Path(args.log_dirpath),
         )
         logger_sys.clearnup()
 
