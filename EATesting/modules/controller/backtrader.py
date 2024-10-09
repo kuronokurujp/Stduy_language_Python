@@ -37,6 +37,9 @@ class Controller(interface.IController):
         if model.err_msg() is not None:
             raise ValueError(model.err_msg())
 
+        if market_model.err_msg() is not None:
+            raise ValueError(market_model.err_msg())
+
         cerebro = bt.Cerebro()
 
         # データをCerebroに追加
@@ -44,10 +47,13 @@ class Controller(interface.IController):
 
         # 初期資金を設定
         cerebro.broker.set_cash(model.get_cash())
+        view.log(f"初期資金: {model.get_cash()}")
 
         # レバレッジを変える
         # commisionは手数料
-        cerebro.broker.setcommission(commission=0)
+        commission: int = 0
+        cerebro.broker.setcommission(commission=commission)
+        view.log(f"手数料: {commission}")
 
         # 発注時のタイミングは次の時間軸の初め値にする
         cerebro.broker.set_coc(False)

@@ -7,12 +7,16 @@ import pandas as pd
 
 # 価格を記載しているCSVファイルをロードしてチャートモデル
 class Model(interface.IModel):
-    data: pd.DataFrame
-    file_path: pathlib.Path
+    __data: pd.DataFrame
+    __file_path: pathlib.Path
+    __min_data_count: int
 
-    def __init__(self, file_path: pathlib.Path) -> None:
+    # データの最小数がいくつか設定できる
+    # 価格のデータ数が最小以下ならエラーとなる
+    def __init__(self, file_path: pathlib.Path, min_data_count: int) -> None:
         super().__init__()
-        self.file_path = file_path
+        self.__file_path = file_path
+        self.__min_data_count = min_data_count
 
     def load(self, datetext: str):
         dates: list[str] = str.split(datetext, "/")
@@ -27,21 +31,28 @@ class Model(interface.IModel):
     ) -> None:
         # CSVファイルを読み込む
         csv_data: pd.DataFrame = pd.read_csv(
-            self.file_path, parse_dates=["datetime"], index_col="datetime"
+            self.__file_path, parse_dates=["datetime"], index_col="datetime"
         )
 
         # 指定された期間でデータをフィルタリング
-        self.data = csv_data[
+        self.__data = csv_data[
             (csv_data.index >= start_date) & (csv_data.index < end_date)
         ]
 
         # 必要なカラムのみ選択
-        self.data = self.data[["open", "high", "low", "close", "volume"]]
+        self.__data = self.__data[["open", "high", "low", "close", "volume"]]
         # カラム名を小文字に変換
-        self.data.columns = ["open", "high", "low", "close", "volume"]
+        self.__data.columns = ["open", "high", "low", "close", "volume"]
 
     def prices_format_backtrader(
         self,
     ) -> bt.feeds.PandasData:
         # データをbacktrader用に変換
-        return bt.feeds.PandasData(dataname=self.data)
+        return bt.feeds.PandasData(dataname=self.__data)
+
+    # モデルにエラーがないか
+    def err_msg(self) -> str:
+        data_count: int = len(self.__data)
+        if data_count <= self.__min_data_count:
+            return f"Error: 価格データ数が{data_count}で最小数{self.__min_data_count}以下"
+        return None

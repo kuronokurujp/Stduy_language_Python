@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
         # マーケットモデルを作成
         market_model: market_model_interface.IModel = market_csv.Model(
-            args.csv_filepath,
+            file_path=args.csv_filepath, min_data_count=10000
         )
 
         # 指定期間の銘柄データをロード
@@ -157,25 +157,19 @@ if __name__ == "__main__":
         print(f"ValueError: {ve}")
         print(traceback.format_exc())
         if b_alert:
-            common.show_alert(
-                title="エラー", msg="エラーになりました。ログをチェックしてください"
-            )
+            common.show_alert(title="エラー", msg=ve)
 
     except TypeError as te:
         print(f"TypeError: {te}")
         print(traceback.format_exc())
         if b_alert:
-            common.show_alert(
-                title="エラー", msg="エラーになりました。ログをチェックしてください"
-            )
+            common.show_alert(title="エラー", msg=te)
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         print(traceback.format_exc())
         if b_alert:
-            common.show_alert(
-                title="エラー", msg="エラーになりました。ログをチェックしてください"
-            )
+            common.show_alert(title="エラー", msg=e)
 
     finally:
         if monitor_process is not None:

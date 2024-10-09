@@ -18,3 +18,9 @@ class IModel(metaclass=abc.ABCMeta):
         self,
     ) -> bt.feeds.PandasData:
         raise NotImplementedError()
+
+    # モデルにエラーがないか
+    # エラーならエラーメッセージを返す
+    @abc.abstractmethod
+    def err_msg(self) -> str:
+        raise NotImplementedError()
