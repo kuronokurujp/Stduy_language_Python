@@ -1,3 +1,6 @@
 [submodule "MakeMarketData/kuro_p_pak"]
 	path = MakeMarketData/kuro_p_pak
 	url = https://github.com/kuronokurujp/kuro_p_pak.git
+[submodule "EATesting/kuro_p_pak"]
+	path = EATesting/kuro_p_pak
+	url = https://github.com/kuronokurujp/kuro_p_pak.git
