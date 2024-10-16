@@ -14,12 +14,20 @@ class RSIAnalyzer(analyzer.BaseAnalyzer):
     def __init__(self):
         self.rsi_min_values = []
         self.rsi_max_values = []
+        self.blank_values = []
+        self.upper_blank_values = []
+        self.lowwer_blank_values = []
 
     def next(self):
         super().next()
 
         self.rsi_min_values.append(self.strategy.rsi_min[0])
         self.rsi_max_values.append(self.strategy.rsi_max[0])
+        self.blank_values.append(self.strategy.rsi_min[0] - self.strategy.rsi_max[0])
+
+        blank_entry: float = abs(self.strategy.params.rsi_blank_entry)
+        self.upper_blank_values.append(blank_entry)
+        self.lowwer_blank_values.append(-blank_entry)
 
     # インジケーターグループを取得
     @property
@@ -27,6 +35,9 @@ class RSIAnalyzer(analyzer.BaseAnalyzer):
         return {
             "rsi_min": np.array(self.rsi_min_values),
             "rsi_max": np.array(self.rsi_max_values),
+            "blank": np.array(self.blank_values),
+            "upper_blank": np.array(self.upper_blank_values),
+            "lowwer_blank": np.array(self.lowwer_blank_values),
         }
 
 

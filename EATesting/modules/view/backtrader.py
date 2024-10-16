@@ -89,10 +89,6 @@ class SaveChartView(view_interface.IView):
                 "open": open_values,
                 "high": high_values,
                 "low": low_values,
-                "order_buy": order_buy_signals,
-                "close_buy": close_buy_signals,
-                "order_sell": order_sell_signals,
-                "close_sell": close_sell_signals,
             }
         )
 
@@ -101,7 +97,7 @@ class SaveChartView(view_interface.IView):
         for key, values in ind_dict.items():
             data[key] = values
 
-        filtered_data = data.reset_index(drop=True)
+        filtered_data: pd.DataFrame = data.reset_index(drop=True)
         filtered_data["index"] = range(len(filtered_data))
 
         # ローソク足のtooltip情報に日付を入れる
@@ -131,61 +127,18 @@ class SaveChartView(view_interface.IView):
             bar_width=1.0,
         )
 
-        signal_labels_plots: list[hv.Labels] = []
-
-        # 買い注文シグナルのプロット
-        # データに表示するテキストを入れる必要がある
-        filtered_data["order_buy_text"] = "買新規"
-        # テキストのスケール値を変えることできない？
-        signal_labels_plots.append(
-            hv.Labels(
-                data=filtered_data,
-                kdims=["index", "order_buy"],
-                vdims=["order_buy_text"],
-            ).opts(
-                text_color="blue",
-            )
-        )
-
-        # 買いクローズシグナルのプロット
-        filtered_data["close_buy_text"] = "買転売"
-        signal_labels_plots.append(
-            hv.Labels(
-                data=filtered_data,
-                kdims=["index", "close_buy"],
-                vdims=["close_buy_text"],
-            ).opts(
-                text_color="red",
-            )
-        )
-
-        # 売り新規のシグナルプロット
-        filtered_data["order_sell_text"] = "売新規"
-        signal_labels_plots.append(
-            hv.Labels(
-                data=filtered_data,
-                kdims=["index", "order_sell"],
-                vdims=["order_sell_text"],
-            ).opts(
-                text_color="blue",
-            )
-        )
-
-        # 売りクローズシグナルのプロット
-        filtered_data["close_sell_text"] = "売転売"
-        signal_labels_plots.append(
-            hv.Labels(
-                data=filtered_data,
-                kdims=["index", "close_sell"],
-                vdims=["close_sell_text"],
-            ).opts(
-                text_color="red",
-            )
+        # チャートに表示する売買シグナル
+        signal_plots: list = self.__create_signal_plots(
+            filtered_data,
+            order_buy_signals=order_buy_signals,
+            order_sell_signals=order_sell_signals,
+            close_buy_signals=close_buy_signals,
+            close_sell_signals=close_sell_signals,
         )
 
         main_plot = candlestick
         # キャンドルと売買シグナルとインジケーターを合成
-        for add_main_plot in signal_labels_plots:
+        for add_main_plot in signal_plots:
             main_plot = main_plot * add_main_plot
 
         # サブプロットがない場合はmain_plotがレイアウトになる
@@ -242,6 +195,89 @@ class SaveChartView(view_interface.IView):
         self.log(msg=msg)
         if self.__b_alert:
             common.show_alert(title="テストが終わりました", msg=msg)
+
+    def __create_signal_plots(
+        self,
+        data: pd.DataFrame,
+        order_buy_signals: np.array,
+        order_sell_signals: np.array,
+        close_buy_signals: np.array,
+        close_sell_signals: np.array,
+    ) -> list:
+        signal_plots: list = []
+
+        shift_value: float = 20.0
+        # 買いシグナルの設定
+        order_buy_condition = ~np.isnan(order_buy_signals)
+        data["order_buy_signal_price"] = np.where(
+            order_buy_condition, data["low"] - shift_value, np.nan
+        )
+
+        # 買い転売シグナルの設定
+        close_buy_condition = ~np.isnan(close_buy_signals)
+        data["close_buy_signal_price"] = np.where(
+            close_buy_condition, data["high"] + shift_value, np.nan
+        )
+
+        # 売りシグナルの設定
+        order_sell_condition = ~np.isnan(order_sell_signals)
+        data["order_sell_signal_price"] = np.where(
+            order_sell_condition, data["high"] + shift_value, np.nan
+        )
+
+        # 売り転買シグナルの設定
+        close_sell_condition = ~np.isnan(close_sell_signals)
+        data["close_sell_signal_price"] = np.where(
+            close_sell_condition, data["low"] - shift_value, np.nan
+        )
+
+        mark_size: int = 128
+        # シグナルのプロット
+        signal_plots.append(
+            data.hvplot.scatter(
+                x="index",
+                y="order_buy_signal_price",
+                marker="triangle",
+                color="red",
+                size=mark_size,
+                legend=False,
+            )
+        )
+
+        signal_plots.append(
+            data.hvplot.scatter(
+                x="index",
+                y="close_buy_signal_price",
+                marker="inverted_triangle",
+                color="#F94FB8",
+                size=mark_size,
+                legend=False,
+            )
+        )
+
+        signal_plots.append(
+            data.hvplot.scatter(
+                x="index",
+                y="order_sell_signal_price",
+                marker="inverted_triangle",
+                color="blue",
+                size=mark_size,
+                legend=False,
+            )
+        )
+
+        signal_plots.append(
+            data.hvplot.scatter(
+                x="index",
+                y="close_sell_signal_price",
+                marker="triangle",
+                color="#F94FB8",
+                size=mark_size,
+                legend=False,
+            )
+        )
+
+        return signal_plots
 
 
 # 最適化進捗表示
