@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import csv
+import kuro_p_pak.common
+import kuro_p_pak.common.sys
 import modules.view.interface as view_interface
 import modules.strategy.interface.analyzer_interface as analyzer_interface
 import modules.common as common
@@ -8,6 +10,7 @@ import pathlib
 import pandas as pd
 import backtrader as bt
 import numpy as np
+import kuro_p_pak.common.sys as kuro_common_sys
 
 # hvplotを使用するために必要
 import hvplot.pandas
@@ -27,19 +30,17 @@ class SaveChartView(view_interface.IView):
 
     def __init__(
         self,
-        save_filepath: pathlib.Path,
+        save_dirpath: pathlib.Path,
         logger_sys: logger_interface.ILoegger,
         b_alert: bool = True,
     ) -> None:
         super().__init__()
-        self.__save_filepath = save_filepath
+        self.__save_dirpath = save_dirpath
         self.__logger_sys = logger_sys
         self.__b_alert = b_alert
 
-        # フォルダパスを抽出してフォルダを作成する
-        directory = self.__save_filepath.parent
         # ディレクトリを作成（存在しない場合のみ）
-        directory.mkdir(parents=True, exist_ok=True)
+        self.__save_dirpath.mkdir(parents=True, exist_ok=True)
 
     # backtraderが呼び出すメソッド
     def show(self):
@@ -184,12 +185,18 @@ class SaveChartView(view_interface.IView):
 
         layout = layout.map(apply_common_opts, hv.Element)
 
+        # 結果を保存するディレクトリを作成
+        self.__save_dirpath = kuro_common_sys.create_directory_by_datetime_jp_name(
+            self.__save_dirpath
+        )
+
         # チャートファイル作成
-        hvplot.save(layout, filename=self.__save_filepath.as_posix())
+        chart_filepath: pathlib.Path = self.__save_dirpath / pathlib.Path("chart.html")
+        hvplot.save(layout, filename=pathlib.Path(chart_filepath.as_posix()))
 
     def end_draw(self, **kwargs) -> None:
         msg: str = (
-            f"チャートを '{self.__save_filepath.as_posix()}' に保存しました。Webブラウザで開いてください。"
+            f"チャートを '{self.__save_dirpath.absolute()}' に保存しました。Webブラウザで開いてください。"
         )
 
         self.log(msg=msg)
@@ -340,33 +347,38 @@ class OptView(view_interface.IView):
         results = kwargs["result"]
         # 初期資金
         cash: int = kwargs["cash"]
-
-        # 以下の条件に該当するものは除外
-        # トレードしていない
-        # 利益がマイナス
-        best_results = [
-            result
-            for result in results
-            if (result[0].p.trades > 0) and (result[0].p.value - cash) > 0
-        ]
-
         msg: str = ""
-        if len(best_results) <= 0:
-            msg = "トレードを一度もしていないか利益がマイナスの結果しかなかった"
+        if 0 < len(results):
+            # TODO: 結果を出力するフォルダを作成
+            # TODO: 最適化結果をリストでcsvファイル出力
+
+            # 以下の条件に該当するものは除外
+            # トレードしていない
+            # 利益がマイナス
+            best_results = [
+                result
+                for result in results
+                if (result[0].p.trades > 0) and (result[0].p.value - cash) > 0
+            ]
+
+            if len(best_results) <= 0:
+                msg = "トレードを一度もしていないか利益がマイナスの結果しかなかった"
+            else:
+                # 一番高い結果から降順にソート
+                best_results = sorted(
+                    best_results, key=lambda x: x[0].p.value, reverse=True
+                )
+
+                # 最適化の結果をリストで保存
+                self.__output_file(
+                    output_path=self.__output_dirpath.joinpath("最適化結果.csv"),
+                    results=best_results,
+                    cash=cash,
+                )
+
+                msg = f"フォルダ({self.__output_dirpath.as_posix()})に最適化結果を出力した"
         else:
-            # 一番高い結果から降順にソート
-            best_results = sorted(
-                best_results, key=lambda x: x[0].p.value, reverse=True
-            )
-
-            # 最適化の結果をリストで保存
-            self.__output_file(
-                output_path=self.__output_dirpath.joinpath("最適化結果.csv"),
-                results=best_results,
-                cash=cash,
-            )
-
-            msg = f"フォルダ({self.__output_dirpath.as_posix()})に最適化結果を出力した"
+            msg = f"最適化結果がひとつもない"
 
         self.log(msg)
         if self.__b_alert:

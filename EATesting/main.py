@@ -76,9 +76,9 @@ if __name__ == "__main__":
 
     # ロジックテストしたチャートデータ保存するファイルパス
     parser.add_argument(
-        "--chart_save_filepath",
+        "--chart_save_dirpath",
         type=str,
-        default="data\\test\\chart.html",
+        default="data\\test",
     )
 
     # ロジックの最適化したデータを保存するディレクトリパス
@@ -176,7 +176,7 @@ if __name__ == "__main__":
         # 通常テストか最適化かで利用するモデルとビューを変える
         if test_ctrl_model.is_strategy_mode():
             ctrl_view = bk_view.SaveChartView(
-                save_filepath=pathlib.Path(args.chart_save_filepath),
+                save_dirpath=pathlib.Path(args.chart_save_dirpath),
                 logger_sys=logger_sys,
                 b_alert=b_alert,
             )
