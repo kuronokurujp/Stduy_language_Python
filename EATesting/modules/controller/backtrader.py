@@ -5,8 +5,10 @@ import modules.model.controller.model as ctrl_model_interface
 import modules.strategy.backtrader.backtrader_strategy as bk_st
 import modules.view.interface as view_interface
 
+import psutil
 import backtrader as bt
 import multiprocessing
+import os
 
 
 # バックトレードを制御するコントローラー
@@ -124,6 +126,34 @@ class Controller(interface.IController):
         view.log(
             msg=f"使用するCPUコア数は({self.cpu_count}) / CPUコア最大数は({cpu_max})"
         )
+
+        # プロセスに使用するコアを設定
+        cpu_count: int = psutil.cpu_count()
+        # CPUコアが2つ以上であればメインCPUコア以外のコアを利用する設定をする
+        if 2 <= cpu_count:
+            # 利用したいCPUコア数が過剰だった場合はメインCPUコア以外のをコア選択リストを生成
+            select_cpu_list: list[int] = []
+            if cpu_count <= self.cpu_count:
+                # メインコア(0)を除く全てのコアを選択したリストを生成
+                select_cpu_list = range(1, cpu_count + 1)
+            else:
+                # メインコア(0)を除く利用率が低いコアを選択したリストを生成
+                # 各コアのCPU使用率を取得
+                cpu_usage = psutil.cpu_percent(percpu=True)
+                # 使用率の低い順に辞書を作成
+                cpu_usage_dict = {
+                    i: usage
+                    for i, usage in sorted(enumerate(cpu_usage), key=lambda x: x[1])
+                }
+
+                # メインCPUは項目は削除
+                del cpu_usage_dict[0]
+                if 2 <= len(cpu_usage_dict):
+                    select_cpu_list = list(cpu_usage_dict.keys())
+
+            if 2 <= len(select_cpu_list):
+                process = psutil.Process(os.getpid())
+                process.cpu_affinity(select_cpu_list)
 
         # バックテストの実行
         view.begin_draw(total=total, cerebro=cerebro)
