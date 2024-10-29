@@ -249,7 +249,7 @@ class SaveChartView(view_interface.IView):
                 x="index",
                 y="close_buy_signal_price",
                 marker="inverted_triangle",
-                color="#F94FB8",
+                color="#18EBF9",
                 size=mark_size,
                 legend=False,
             )
