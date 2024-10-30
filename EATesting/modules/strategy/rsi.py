@@ -74,26 +74,30 @@ class RSIStrategy(strategy.BaseStrategy):
     @staticmethod
     def add_opt(cerebro, params) -> int:
         items = params["rsi_min_period"].split(",")
-        rsi_min_period: range = range(int(items[0]), int(items[1]), int(items[2]))
+        rsi_min_period: range = range(
+            int(items[0]), int(items[1]) + int(items[2]), int(items[2])
+        )
 
         items = params["rsi_max_period"].split(",")
-        rsi_max_period: range = range(int(items[0]), int(items[1]), int(items[2]))
+        rsi_max_period: range = range(
+            int(items[0]), int(items[1]) + int(items[2]), int(items[2])
+        )
 
         items = params["rsi_blank_entry"].split(",")
         rsi_blank_entry = modules.common.frange(
-            float(items[0]), float(items[1]), float(items[2])
+            float(items[0]), float(items[1]) + float(items[2]), float(items[2])
         )
 
         close_type = params["close_types"].split(",")
 
         items = params["close_before_val"].split(",")
         close_before_val = modules.common.frange(
-            float(items[0]), float(items[1]), float(items[2])
+            float(items[0]), float(items[1]) + float(items[2]), float(items[2])
         )
 
         items = params["close_before_val"].split(",")
         close_after_val = modules.common.frange(
-            float(items[0]), float(items[1]), float(items[2])
+            float(items[0]), float(items[1]) + float(items[2]), float(items[2])
         )
 
         # 進捗管理インスタンスを作成
