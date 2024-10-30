@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import csv
-import kuro_p_pak.common
-import kuro_p_pak.common.sys
+import modules.analysis.opt as analysis_opt
 import modules.view.interface as view_interface
 import modules.strategy.interface.analyzer_interface as analyzer_interface
 import modules.common as common
@@ -349,34 +348,29 @@ class OptView(view_interface.IView):
         cash: int = kwargs["cash"]
         msg: str = ""
         if 0 < len(results):
-            # TODO: 結果を出力するフォルダを作成
+            # 結果を保存するディレクトリを作成
+            self.__output_dirpath = (
+                kuro_common_sys.create_directory_by_datetime_jp_name(
+                    self.__output_dirpath
+                )
+            )
+
             # TODO: 最適化結果をリストでcsvファイル出力
+            output_filepath: pathlib.Path = self.__output_dirpath.joinpath(
+                "最適化結果.csv"
+            )
+            self.__output_file(
+                output_path=output_filepath,
+                results=results,
+                cash=cash,
+            )
 
-            # 以下の条件に該当するものは除外
-            # トレードしていない
-            # 利益がマイナス
-            best_results = [
-                result
-                for result in results
-                if (result[0].p.trades > 0) and (result[0].p.value - cash) > 0
-            ]
+            # 解析処理をする
+            analysis_dirpath: pathlib.Path = self.__output_dirpath.joinpath("解析結果")
+            analysis_dirpath.mkdir(exist_ok=True)
+            analysis = analysis_opt.Opt(analysis_dirpath, output_filepath)
+            msg = analysis.plot()
 
-            if len(best_results) <= 0:
-                msg = "トレードを一度もしていないか利益がマイナスの結果しかなかった"
-            else:
-                # 一番高い結果から降順にソート
-                best_results = sorted(
-                    best_results, key=lambda x: x[0].p.value, reverse=True
-                )
-
-                # 最適化の結果をリストで保存
-                self.__output_file(
-                    output_path=self.__output_dirpath.joinpath("最適化結果.csv"),
-                    results=best_results,
-                    cash=cash,
-                )
-
-                msg = f"フォルダ({self.__output_dirpath.as_posix()})に最適化結果を出力した"
         else:
             msg = f"最適化結果がひとつもない"
 
@@ -405,7 +399,3 @@ class OptView(view_interface.IView):
                     ]
                     + list(result[0].p._getkwargs().values())
                 )
-
-                # print("資金: ", result[0].p.value)
-                # print("トレード回数: ", result[0].p.trades)
-                # print("パラメータ: ", result[0].p._getkwargs())
