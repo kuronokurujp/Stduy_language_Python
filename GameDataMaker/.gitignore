@@ -165,7 +165,8 @@ media
 # pyenvのローカルpythonバージョン情報
 .python-version
 
-tests/data/*
-!tests/data/Template.xlsx
+tests/data/log/*
+tests/data/parameters/*
+
 log/*
 
