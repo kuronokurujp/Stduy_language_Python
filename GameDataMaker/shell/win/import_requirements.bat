@@ -3,7 +3,7 @@
 setlocal
 
 cd %~dp0
-call venv_enable.bat
+call ../../venv/scripts/activate.bat
 pip install -r ../../requirements.txt
 
 endlocal

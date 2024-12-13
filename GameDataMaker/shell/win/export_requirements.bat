@@ -3,7 +3,7 @@
 setlocal
 
 cd %~dp0
-call venv_enable.bat
+call ../../venv/scripts/activate.bat
 pip freeze > ../../requirements.txt
 
 endlocal
