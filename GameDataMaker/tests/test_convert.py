@@ -4,7 +4,6 @@ import modules.convert as convert
 from kuro_p_pak.log import logger
 from pathlib import Path
 
-
 # 必ず関数名にはtest_を頭につける
 def test_convert_with_game_data():
     app_logger: logger.ILoegger = logger.AppLogger(
@@ -15,7 +14,7 @@ def test_convert_with_game_data():
     output_dir_path: Path = Path(__file__).parent / "data/parameters"
     game_parameter_convert: convert.ConverterWithGameParamater = (
         convert.ConverterWithGameParamater(
-            org_file_path=Path(__file__).parent / "data/GameData.xlsx",
+            org_file_path=Path(__file__).parent / "data/Template.xlsm",
             output_dir_path=output_dir_path,
         )
     )
