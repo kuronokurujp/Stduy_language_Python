@@ -159,9 +159,11 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# リポジトリでコミット禁止対象
-.vscode
-NikkeiMiniOriginalDataShaping/*
-OutputTweetData/*
-Sample/*
+# Djangoのメディアディレクトリは除外
+media
+
+# pyenvのローカルpythonバージョン情報
+.python-version
+samples/*
+tests/data/*
 
