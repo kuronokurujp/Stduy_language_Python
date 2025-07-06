@@ -165,3 +165,6 @@ media
 # pyenvのローカルpythonバージョン情報
 .python-version
 
+models/*.*
+
+
